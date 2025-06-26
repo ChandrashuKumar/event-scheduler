@@ -13,3 +13,48 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model User {
+  id          String   @id @default(uuid())
+  firebaseUID String   @unique
+  email       String   @unique
+  name        String?
+  createdAt   DateTime @default(now())
+  
+  groups      GroupMember[]  // many-to-many relationship
+  availability Availability[] // user availability slots
+}
+
+model Group {
+  id          String   @id @default(uuid())
+  name        String
+  createdBy   String   // could be a userId or firebaseUID
+  createdAt   DateTime @default(now())
+
+  members     GroupMember[]    // join table
+  availability Availability[]  // all availabilities for this group
+}
+
+model GroupMember {
+  id        String   @id @default(uuid())
+  userId    String
+  groupId   String
+  joinedAt  DateTime @default(now())
+
+  user      User   @relation(fields: [userId], references: [id])
+  group     Group  @relation(fields: [groupId], references: [id])
+
+  @@unique([userId, groupId]) // prevent duplicate joins
+}
+
+model Availability {
+  id        String   @id @default(uuid())
+  userId    String
+  groupId   String
+  day       String   // e.g., "Monday"
+  startTime String   // e.g., "14:00"
+  endTime   String   // e.g., "15:30"
+
+  user      User   @relation(fields: [userId], references: [id])
+  group     Group  @relation(fields: [groupId], references: [id])
+}
