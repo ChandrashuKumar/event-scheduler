@@ -34,6 +34,14 @@ export default function DashboardPage() {
         >
           Logout
         </button>
+
+        <button
+          onClick={() => router.push('/join-group')}
+          className="bg-green-500 text-white px-4 py-2 rounded"
+        >
+          Join Group
+        </button>
+
       </div>
     </div>
   );
