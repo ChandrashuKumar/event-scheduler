@@ -15,7 +15,7 @@ export default function DashboardPage() {
     }
 
     const fetchGroups = async () => {
-      if(!user) return;
+      if (!user) return;
       const token = await user?.getIdToken();
       const res = await fetch('/api/group/list', {
         headers: {
@@ -53,10 +53,7 @@ export default function DashboardPage() {
           🔗 Join Group
         </button>
 
-        <button
-          onClick={logout}
-          className="bg-red-500 text-white px-4 py-2 rounded"
-        >
+        <button onClick={logout} className="bg-red-500 text-white px-4 py-2 rounded">
           Logout
         </button>
       </div>
@@ -70,7 +67,15 @@ export default function DashboardPage() {
         ) : (
           <ul className="list-disc list-inside">
             {groups.map((group) => (
-              <li key={group.id}>{group.name}</li>
+              <li key={group.id}>
+                {group.name}{' '}
+                <button
+                  onClick={() => router.push(`/groups/${group.id}/availability`)}
+                  className="text-blue-600 underline ml-2"
+                >
+                  ➕ Submit Availability
+                </button>
+              </li>
             ))}
           </ul>
         )}
