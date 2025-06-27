@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 
@@ -12,6 +12,7 @@ export default function AvailabilityForm() {
   const [status, setStatus] = useState('');
   const [entries, setEntries] = useState<any[]>([]);
   const { user } = useAuth();
+  const router = useRouter();
 
   useEffect(() => {
     const fetchAvailability = async () => {
@@ -122,6 +123,12 @@ export default function AvailabilityForm() {
           </ul>
         </div>
       )}
+      <button
+        onClick={() => router.push(`/groups/${groupId}/result`)}
+        className="bg-purple-600 text-white px-4 py-2 rounded"
+      >
+        🧠 View Common Time Slots
+      </button>
     </div>
   );
 }
