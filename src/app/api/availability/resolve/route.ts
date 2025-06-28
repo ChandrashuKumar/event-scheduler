@@ -82,7 +82,7 @@ export async function GET(req: NextRequest) {
     for (const day in membersPerDay) {
       const intervalsList = membersPerDay[day];
       let common = intervalsList[0];
-
+      if (intervalsList.length < userIds.length) continue;
       for (let i = 1; i < intervalsList.length; i++) {
         common = intersectIntervals(common, intervalsList[i]);
         if (common.length === 0) break;

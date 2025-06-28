@@ -42,7 +42,7 @@ export default function DashboardPage() {
 
   return (
     <div className="p-8 space-y-4">
-      <ToastContainer position="top-right" autoClose={3000} theme='dark' />
+      <ToastContainer position="top-right" autoClose={3000} theme="dark" />
       <h1 className="text-xl font-bold">Dashboard</h1>
       <p>Welcome, {user?.displayName || user?.email}</p>
 
@@ -77,16 +77,14 @@ export default function DashboardPage() {
           <ul className="list-disc list-inside">
             {groups.map((group) => (
               <li key={group.id} className="mb-4">
-                <span className="font-medium text-lg">{group.name}</span>
+                <button
+                  onClick={() => router.push(`/groups/${group.id}/availability`)}
+                  className="text-blue-500 underline hover:text-blue-400 transition font-medium text-xl bg-transparent border-none p-0 m-0 cursor-pointer"
+                >
+                  {group.name}
+                </button>
 
                 <div className="mt-1 ml-4 flex gap-4">
-                  <button
-                    onClick={() => router.push(`/groups/${group.id}/availability`)}
-                    className="text-blue-400 hover:text-blue-500 transition-colors"
-                  >
-                    ➕ Submit Availability
-                  </button>
-
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(group.id);
