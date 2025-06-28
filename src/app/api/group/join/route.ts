@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json(joined, { status: 200 });
+    return NextResponse.json({ message: 'Joined group', groupName: group.name, status: 200 });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });

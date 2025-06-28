@@ -2,12 +2,15 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
 
 export default function DashboardPage() {
   const { user, loading, logout } = useAuth();
   const router = useRouter();
 
   const [groups, setGroups] = useState<any[]>([]);
+  const [groupsLoading, setGroupsLoading] = useState(true);
 
   useEffect(() => {
     if (!user && !loading) {
@@ -16,6 +19,7 @@ export default function DashboardPage() {
 
     const fetchGroups = async () => {
       if (!user) return;
+      setGroupsLoading(true);
       const token = await user?.getIdToken();
       const res = await fetch('/api/group/list', {
         headers: {
@@ -25,6 +29,7 @@ export default function DashboardPage() {
       const data = await res.json();
       console.log('Group data:', data);
       setGroups(data);
+      setGroupsLoading(false);
     };
 
     fetchGroups();
@@ -60,8 +65,9 @@ export default function DashboardPage() {
 
       <div className="mt-6">
         <h2 className="text-lg font-semibold mb-2">Your Groups</h2>
-        {loading ? (
-          <p>Loading...</p>
+        {groupsLoading ? (
+          // Render skeleton placeholders
+          <Skeleton count={3} width={300} baseColor='#313131' highlightColor='#525252'/>
         ) : groups.length === 0 ? (
           <p>You’re not in any groups yet.</p>
         ) : (

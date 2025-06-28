@@ -1,6 +1,9 @@
 'use client';
+
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function JoinGroupPage() {
   const [groupId, setGroupId] = useState('');
@@ -21,15 +24,17 @@ export default function JoinGroupPage() {
 
     const data = await res.json();
     if (res.ok) {
-      alert(`Joined group: ${groupId}`);
+      toast.success(`Joined group: ${data.groupName || groupId}`);
       setGroupId('');
     } else {
-      alert(`Error: ${data.error}`);
+      toast.error(`❌ ${data.error}`);
     }
   };
 
   return (
     <div className="p-8 max-w-md mx-auto">
+      <ToastContainer position="top-right" autoClose={3000} theme='dark' />
+
       <h1 className="text-xl mb-4">Join Group</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <input
