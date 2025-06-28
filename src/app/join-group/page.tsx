@@ -33,7 +33,7 @@ export default function JoinGroupPage() {
 
   return (
     <div className="p-8 max-w-md mx-auto">
-      <ToastContainer position="top-right" autoClose={3000} theme='dark' />
+      <ToastContainer position="top-right" autoClose={3000} theme="dark" />
 
       <h1 className="text-xl mb-4">Join Group</h1>
       <form onSubmit={handleSubmit} className="space-y-4">

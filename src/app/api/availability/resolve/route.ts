@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/lib/firebase-admin';
 import { PrismaClient } from '@/generated/prisma';
 
 const prisma = new PrismaClient();
@@ -10,13 +9,16 @@ function timeToMinutes(t: string) {
 }
 
 function minutesToTime(m: number) {
-  const h = Math.floor(m / 60).toString().padStart(2, '0');
+  const h = Math.floor(m / 60)
+    .toString()
+    .padStart(2, '0');
   const min = (m % 60).toString().padStart(2, '0');
   return `${h}:${min}`;
 }
 
 function intersectIntervals(a: [number, number][], b: [number, number][]) {
-  let i = 0, j = 0;
+  let i = 0,
+    j = 0;
   const result: [number, number][] = [];
 
   while (i < a.length && j < b.length) {
@@ -77,7 +79,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const final: Record<string, { start: string, end: string }[]> = {};
+    const final: Record<string, { start: string; end: string }[]> = {};
 
     for (const day in membersPerDay) {
       const intervalsList = membersPerDay[day];
@@ -97,8 +99,12 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json(final);
-  } catch (error) {
-    console.error('Resolve error:', error);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error('Resolve error:', error.message);
+    } else {
+      console.error('Resolve error:', error);
+    }
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

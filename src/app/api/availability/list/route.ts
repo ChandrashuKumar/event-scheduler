@@ -39,8 +39,12 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json(availability);
-  } catch (err) {
-    console.error('Availability fetch error:', err);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error('Availability fetch error:', error.message);
+    } else {
+      console.error('Availability fetch error:', error);
+    }
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

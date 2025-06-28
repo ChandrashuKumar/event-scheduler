@@ -1,6 +1,8 @@
 'use client';
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function CreateGroupPage() {
   const [groupName, setGroupName] = useState('');
@@ -21,7 +23,7 @@ export default function CreateGroupPage() {
 
     if (res.ok) {
       const data = await res.json();
-      alert(`Group created: ${data.name}`);
+      toast.success(`Created group: ${data.name}`);
       setGroupName('');
     } else {
       const error = await res.json();
@@ -31,6 +33,7 @@ export default function CreateGroupPage() {
 
   return (
     <div className="p-8 max-w-md mx-auto">
+      <ToastContainer position="top-right" autoClose={3000} theme="dark" />
       <h1 className="text-xl font-bold mb-4">Create a Group</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
         <input

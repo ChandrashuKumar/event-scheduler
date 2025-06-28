@@ -36,8 +36,12 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ user });
-  } catch (err: any) {
-    console.error(err);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error('User init error:', error.message);
+    } else {
+      console.error('User init error:', error);
+    }
     return NextResponse.json({ error: 'Server Error' }, { status: 500 });
   }
 }

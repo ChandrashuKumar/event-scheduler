@@ -34,8 +34,12 @@ export async function GET(req: NextRequest) {
     const groups = memberships.map((m) => m.group);
 
     return NextResponse.json(groups);
-  } catch (err) {
-    console.error(err);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error('Group list error:', error.message);
+    } else {
+      console.error('Group list error:', error);
+    }
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

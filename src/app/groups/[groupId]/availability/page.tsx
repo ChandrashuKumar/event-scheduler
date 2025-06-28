@@ -5,6 +5,12 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
+import { type Availability } from '@/generated/prisma';
+
+type GroupMemberBasic = {
+  id: string;
+  name: string;
+};
 
 export default function AvailabilityForm() {
   const { groupId } = useParams();
@@ -12,8 +18,8 @@ export default function AvailabilityForm() {
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [status, setStatus] = useState('');
-  const [entries, setEntries] = useState<any[]>([]);
-  const [members, setMembers] = useState<any[]>([]);
+  const [entries, setEntries] = useState<Availability[]>([]);
+  const [members, setMembers] = useState<GroupMemberBasic[]>([]);
   const [loadingEntries, setLoadingEntries] = useState(true);
   const { user } = useAuth();
   const router = useRouter();

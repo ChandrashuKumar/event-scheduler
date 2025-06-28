@@ -24,7 +24,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(
       members.map((m) => ({ id: m.userId, name: m.user.name || m.user.email }))
     );
-  } catch (err) {
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error('Members list error:', error.message);
+    } else {
+      console.error('Members list error:', error);
+    }
     return NextResponse.json({ error: 'Unauthorized or failed' }, { status: 401 });
   }
 }

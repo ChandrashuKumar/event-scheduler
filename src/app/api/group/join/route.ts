@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Group not found' }, { status: 404 });
     }
 
-    const joined = await prisma.groupMember.upsert({
+    await prisma.groupMember.upsert({
       where: {
         userId_groupId: {
           userId: dbUser.id,
@@ -48,8 +48,12 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ message: 'Joined group', groupName: group.name, status: 200 });
-  } catch (err) {
-    console.error(err);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error('Group join error:', error.message);
+    } else {
+      console.error('Group join error:', error);
+    }
     return NextResponse.json({ error: 'Something went wrong' }, { status: 500 });
   }
 }

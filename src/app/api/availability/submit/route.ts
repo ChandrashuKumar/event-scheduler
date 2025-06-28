@@ -40,8 +40,12 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true, availability: created });
-  } catch (error: any) {
-    console.error('Availability submit error:', error);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error('Availability submit error:', error.message);
+    } else {
+      console.error('Availability submit error:', error);
+    }
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

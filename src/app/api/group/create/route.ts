@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
       where: { firebaseUID },
     });
 
-    if(!dbUser) {
+    if (!dbUser) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
@@ -46,8 +46,12 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json(group, { status: 201 });
-  } catch (err) {
-    console.error(err);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error('Group creation error:', error.message);
+    } else {
+      console.error('Group creation error:', error);
+    }
     return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

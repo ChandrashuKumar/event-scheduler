@@ -25,6 +25,7 @@ export default function AvailabilityResult() {
           setError(data.error || 'Something went wrong');
         }
       } catch (err) {
+        console.error(err);
         setError('Server error');
       } finally {
         setLoading(false);
