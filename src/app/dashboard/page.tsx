@@ -4,6 +4,8 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function DashboardPage() {
   const { user, loading, logout } = useAuth();
@@ -40,6 +42,7 @@ export default function DashboardPage() {
 
   return (
     <div className="p-8 space-y-4">
+      <ToastContainer position="top-right" autoClose={3000} theme='dark' />
       <h1 className="text-xl font-bold">Dashboard</h1>
       <p>Welcome, {user?.displayName || user?.email}</p>
 
@@ -67,20 +70,33 @@ export default function DashboardPage() {
         <h2 className="text-lg font-semibold mb-2">Your Groups</h2>
         {groupsLoading ? (
           // Render skeleton placeholders
-          <Skeleton count={3} width={300} baseColor='#313131' highlightColor='#525252'/>
+          <Skeleton count={3} width={300} baseColor="#313131" highlightColor="#525252" />
         ) : groups.length === 0 ? (
           <p>You’re not in any groups yet.</p>
         ) : (
           <ul className="list-disc list-inside">
             {groups.map((group) => (
-              <li key={group.id}>
-                {group.name}{' '}
-                <button
-                  onClick={() => router.push(`/groups/${group.id}/availability`)}
-                  className="text-blue-600 underline ml-2"
-                >
-                  ➕ Submit Availability
-                </button>
+              <li key={group.id} className="mb-4">
+                <span className="font-medium text-lg">{group.name}</span>
+
+                <div className="mt-1 ml-4 flex gap-4">
+                  <button
+                    onClick={() => router.push(`/groups/${group.id}/availability`)}
+                    className="text-blue-400 hover:text-blue-500 transition-colors"
+                  >
+                    ➕ Submit Availability
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(group.id);
+                      toast.success('Group ID copied to clipboard');
+                    }}
+                    className="text-gray-300 hover:text-gray-400 transition-colors"
+                  >
+                    📋 Copy Group ID
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
