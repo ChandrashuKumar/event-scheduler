@@ -1,36 +1,130 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🗓️ Smart Event Scheduler
 
-## Getting Started
+A full-stack web application that enables teams to effortlessly coordinate common availability and schedule meetings — powered by **Next.js**, **Firebase Auth**, **Supabase PostgreSQL**, and **Prisma**.
+Checkout Live at https://event-scheduler-lovat-seven.vercel.app/
 
-First, run the development server:
+---
+
+## 🚀 Features
+
+- 🔐 Google Sign-In with Firebase Authentication  
+- 👥 Create & Join Groups with unique IDs  
+- 📆 Submit your availability for specific days & time slots  
+- 🤝 View common time slots across group members  
+- 🧠 Intelligent merging of user availability  
+- 📋 Skeleton loaders and polished UI for seamless UX  
+- 🧑‍💼 Admin can copy group ID for sharing  
+- 📊 Prisma ORM for clean database interaction  
+- ☁️ Deployed via **Vercel**
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend & Backend**: Next.js (App Router)  
+- **Database**: PostgreSQL via Supabase  
+- **ORM**: Prisma  
+- **Authentication**: Firebase Auth (Google provider)  
+- **Styling**: Tailwind CSS  
+- **Notifications**: React Toastify  
+- **Loading UI**: react-loading-skeleton
+
+---
+
+## 📦 Folder Structure
+
+```
+/src
+  /app               # Next.js routes and pages
+  /components        # Reusable UI components
+  /context           # Firebase auth context provider
+  /lib               # Firebase Admin & client setup
+  /generated/prisma  # Prisma client output
+  /api               # API routes (group, availability)
+```
+
+---
+
+## 🧪 Local Development
+
+### 1. Clone and Install
+
+```bash
+git clone https://github.com/your-username/event-scheduler.git
+cd event-scheduler
+npm install
+```
+
+### 2. Environment Setup
+
+Create a `.env` file with the following:
+
+```
+DATABASE_URL=your_postgres_db_url
+DIRECT_URL=your_direct_postgres_url
+FIREBASE_PROJECT_ID=...
+FIREBASE_CLIENT_EMAIL=...
+FIREBASE_PRIVATE_KEY=...
+```
+
+If you're using a `firebase-admin-key.json`, base64 encode it and set it in Vercel as:
+
+```
+FIREBASE_ADMIN_KEY_BASE64=base64_encoded_json
+```
+
+### 3. Prisma
+
+```bash
+npx prisma generate
+npx prisma migrate dev --name init
+```
+
+### 4. Run Locally
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🔐 Auth Configuration
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Uses Firebase Auth (Google provider)  
+- Handles session persistence via custom `AuthContext`  
+- Server routes validate JWTs using Firebase Admin SDK
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 📤 Deployment
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Deployed via **Vercel**.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Ensure all secrets are added to Vercel's Environment Variables:
 
-## Deploy on Vercel
+- `DATABASE_URL`
+- `DIRECT_URL`
+- `FIREBASE_PROJECT_ID`
+- `FIREBASE_CLIENT_EMAIL`
+- `FIREBASE_PRIVATE_KEY` or `FIREBASE_ADMIN_KEY_BASE64`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🧑‍💻 Future Improvements
+
+- 📱 Responsive mobile-first layout  
+- 📅 Calendar-style date/time picker  
+- 🔔 Email notifications for new availability  
+- 📈 Admin dashboard for analytics
+
+---
+
+## 🙌 Acknowledgements
+
+Built as a solo project for learning and exploration in real-world full-stack development.
+
+---
+
+## 📜 License
+
+MIT License
