@@ -7,26 +7,26 @@ Checkout Live at https://event-scheduler-lovat-seven.vercel.app/
 
 ## 🚀 Features
 
-- 🔐 Google Sign-In with Firebase Authentication  
-- 👥 Create & Join Groups with unique IDs  
-- 📆 Submit your availability for specific days & time slots  
-- 🤝 View common time slots across group members  
-- 🧠 Intelligent merging of user availability  
-- 📋 Skeleton loaders and polished UI for seamless UX  
-- 🧑‍💼 Admin can copy group ID for sharing  
-- 📊 Prisma ORM for clean database interaction  
+- 🔐 Google Sign-In with Firebase Authentication
+- 👥 Create & Join Groups with unique IDs
+- 📆 Submit your availability for specific days & time slots
+- 🤝 View common time slots across group members
+- 🧠 Intelligent merging of user availability
+- 📋 Skeleton loaders and polished UI for seamless UX
+- 🧑‍💼 Admin can copy group ID for sharing
+- 📊 Prisma ORM for clean database interaction
 - ☁️ Deployed via **Vercel**
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Frontend & Backend**: Next.js (App Router)  
-- **Database**: PostgreSQL via Supabase  
-- **ORM**: Prisma  
-- **Authentication**: Firebase Auth (Google provider)  
-- **Styling**: Tailwind CSS  
-- **Notifications**: React Toastify  
+- **Frontend & Backend**: Next.js (App Router)
+- **Database**: PostgreSQL via Supabase
+- **ORM**: Prisma
+- **Authentication**: Firebase Auth (Google provider)
+- **Styling**: Tailwind CSS
+- **Notifications**: React Toastify
 - **Loading UI**: react-loading-skeleton
 
 ---
@@ -90,8 +90,8 @@ npm run dev
 
 ## 🔐 Auth Configuration
 
-- Uses Firebase Auth (Google provider)  
-- Handles session persistence via custom `AuthContext`  
+- Uses Firebase Auth (Google provider)
+- Handles session persistence via custom `AuthContext`
 - Server routes validate JWTs using Firebase Admin SDK
 
 ---
@@ -112,9 +112,9 @@ Ensure all secrets are added to Vercel's Environment Variables:
 
 ## 🧑‍💻 Future Improvements
 
-- 📱 Responsive mobile-first layout  
-- 📅 Calendar-style date/time picker  
-- 🔔 Email notifications for new availability  
+- 📱 Responsive mobile-first layout
+- 📅 Calendar-style date/time picker
+- 🔔 Email notifications for new availability
 - 📈 Admin dashboard for analytics
 
 ---

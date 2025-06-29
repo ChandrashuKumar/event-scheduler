@@ -30,8 +30,13 @@ export default function DashboardPage() {
         },
       });
       const data = await res.json();
-      console.log('Group data:', data);
-      setGroups(data);
+      //console.log('Group data:', data);
+      if (Array.isArray(data)) {
+        setGroups(data);
+      } else {
+        //console.error('Unexpected group response format:', data);
+        setGroups([]); // set to empty to prevent crash
+      }
       setGroupsLoading(false);
     };
 
