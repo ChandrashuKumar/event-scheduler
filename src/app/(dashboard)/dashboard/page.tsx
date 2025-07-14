@@ -47,65 +47,75 @@ export default function DashboardPage() {
   if (!user) return null; // prevent flash of protected content
 
   return (
-    <div className="p-8 space-y-4">
+    <div className="p-8 max-w-4xl mx-auto space-y-8">
       <ToastContainer position="top-right" autoClose={3000} theme="dark" />
-      <h1 className="text-xl font-bold">Dashboard</h1>
-      <p>Welcome, {user?.displayName || user?.email}</p>
 
-      <div className="space-x-4">
+      <header className="space-y-2">
+        <h1 className="text-3xl font-bold text-white">Dashboard</h1>
+        <p className="text-gray-400">Welcome, {user?.displayName || user?.email}</p>
+      </header>
+
+      <section className="flex flex-wrap gap-4">
         <button
           onClick={() => router.push('/create-group')}
-          className="bg-blue-500 text-white px-4 py-2 rounded"
+          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-md shadow transition"
         >
           ➕ Create Group
         </button>
 
         <button
           onClick={() => router.push('/join-group')}
-          className="bg-green-500 text-white px-4 py-2 rounded"
+          className="flex items-center gap-2 bg-lime-600 hover:bg-lime-500 text-white px-5 py-2 rounded-md shadow transition"
         >
           🔗 Join Group
         </button>
 
-        <button onClick={logout} className="bg-red-500 text-white px-4 py-2 rounded">
-          Logout
+        <button
+          onClick={logout}
+          className="flex items-center gap-2 bg-rose-600 hover:bg-rose-500 text-white px-5 py-2 rounded-md shadow transition"
+        >
+          🚪 Logout
         </button>
-      </div>
+      </section>
 
-      <div className="mt-6">
-        <h2 className="text-lg font-semibold mb-2">Your Groups</h2>
+      <section>
+        <h2 className="text-2xl font-semibold text-white mb-4">Your Groups</h2>
         {groupsLoading ? (
-          // Render skeleton placeholders
-          <Skeleton count={3} width={300} baseColor="#313131" highlightColor="#525252" />
+          <Skeleton count={3} height={60} baseColor="#1f1f1f" highlightColor="#2e2e2e" />
         ) : groups.length === 0 ? (
-          <p>You’re not in any groups yet.</p>
+          <p className="text-gray-400">You’re not in any groups yet.</p>
         ) : (
-          <ul className="list-disc list-inside">
+          <div className="grid sm:grid-cols-2 gap-4">
             {groups.map((group) => (
-              <li key={group.id} className="mb-4">
-                <button
-                  onClick={() => router.push(`/groups/${group.id}/availability`)}
-                  className="text-blue-500 underline hover:text-blue-400 transition font-medium text-xl bg-transparent border-none p-0 m-0 cursor-pointer"
-                >
-                  {group.name}
-                </button>
+              <div
+                key={group.id}
+                className="bg-zinc-800 p-4 rounded-lg shadow border border-zinc-700 space-y-2"
+              >
+                <h3 className="text-lg font-medium text-indigo-300">{group.name}</h3>
 
-                <div className="mt-1 ml-4 flex gap-4">
+                <div className="flex justify-between text-sm text-gray-400">
+                  <button
+                    onClick={() => router.push(`/groups/${group.id}/availability`)}
+                    className="hover:underline text-blue-400"
+                  >
+                    Open Group →
+                  </button>
+
                   <button
                     onClick={() => {
                       navigator.clipboard.writeText(group.id);
-                      toast.success('Group ID copied to clipboard');
+                      toast.success('Copied!');
                     }}
-                    className="text-gray-300 hover:text-gray-400 transition-colors"
+                    className="hover:text-gray-300"
                   >
-                    📋 Copy Group ID
+                    📋 Copy ID
                   </button>
                 </div>
-              </li>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }
