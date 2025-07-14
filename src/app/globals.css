@@ -5,12 +5,12 @@
   --foreground: #171717;
 }
 
-@theme{
-  --color-base-100: oklch(25.33% .016 252.42);
-  --color-base-200: oklch(23.26% .014 253.1);
+@theme {
+  --color-base-100: oklch(25.33% 0.016 252.42);
+  --color-base-200: oklch(23.26% 0.014 253.1);
   --color-base-300: oklch(0.21 0.01 254.13);
-  --color-primary: oklch(58% .233 277.117);
-  --color-error: oklch(71% .194 13.428);
+  --color-primary: oklch(58% 0.233 277.117);
+  --color-error: oklch(71% 0.194 13.428);
 }
 
 @theme inline {

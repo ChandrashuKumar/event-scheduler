@@ -1,19 +1,26 @@
 'use client';
-import { useEffect, useState } from 'react';
+
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { type Group } from '@/generated/prisma/client';
+import { format } from 'date-fns';
+import { BarChart, XAxis, YAxis, Tooltip, Bar, Cell, ResponsiveContainer } from 'recharts';
+import { Group } from '@/generated/prisma/client';
+
+const MEETING_COLORS = ['#22c55e', '#3b82f6', '#eab308', '#ec4899', '#a78bfa'];
 
 export default function DashboardPage() {
-  const { user, loading, logout } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   const [groups, setGroups] = useState<Group[]>([]);
   const [groupsLoading, setGroupsLoading] = useState(true);
+  const [meetings, setMeetings] = useState<Record<string, { start: string; end: string }[]>>({});
+  const [meetingLoading, setMeetingLoading] = useState(true);
 
   useEffect(() => {
     if (!user && !loading) {
@@ -23,65 +30,160 @@ export default function DashboardPage() {
     const fetchGroups = async () => {
       if (!user) return;
       setGroupsLoading(true);
-      const token = await user?.getIdToken();
+      const token = await user.getIdToken();
       const res = await fetch('/api/group/list', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      //console.log('Group data:', data);
-      if (Array.isArray(data)) {
-        setGroups(data);
-      } else {
-        //console.error('Unexpected group response format:', data);
-        setGroups([]); // set to empty to prevent crash
-      }
+      console.log(data);
+
+      setGroups(Array.isArray(data) ? data : []);
       setGroupsLoading(false);
     };
 
+    const fetchMeetings = async () => {
+      if (!user) return;
+      setMeetingLoading(true);
+      try {
+        const token = await user.getIdToken();
+        const groupList = await fetch('/api/group/list', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const groupData = await groupList.json();
+        const group = Array.isArray(groupData) ? groupData[0] : null;
+        if (!group) return;
+
+        const res = await fetch(`/api/availability/resolve?groupId=${group.id}`);
+        const data = await res.json();
+        setMeetings(data || {});
+      } catch (e) {
+        console.error(e);
+        toast.error('Failed to fetch meetings');
+      } finally {
+        setMeetingLoading(false);
+      }
+    };
+
     fetchGroups();
+    fetchMeetings();
   }, [user, loading, router]);
 
-  if (loading) return <p className="p-8">Loading...</p>;
-  if (!user) return null; // prevent flash of protected content
+  const greeting = useMemo(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 18) return 'Good afternoon';
+    return 'Good evening';
+  }, []);
+
+  const meetingData = useMemo(() => {
+    const weekdayLabels = [
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+    ];
+    const todayIndex = new Date().getDay(); // 0 (Sun) to 6 (Sat)
+    const upcomingWeekdays = weekdayLabels.slice(todayIndex);
+
+    return upcomingWeekdays.map((day) => ({
+      day,
+      count: meetings[day]?.length || 0,
+    }));
+  }, [meetings]);
+
+  if (loading) return <p className="p-8 text-white">Loading...</p>;
+  if (!user) return null;
 
   return (
-    <div className="p-8 max-w-4xl mx-auto space-y-8">
+    <div className="p-4 sm:p-6 space-y-8 text-white bg-gray-900 min-h-screen overflow-x-hidden">
       <ToastContainer position="top-right" autoClose={3000} theme="dark" />
 
-      <header className="space-y-2">
-        <h1 className="text-3xl font-bold text-white">Dashboard</h1>
-        <p className="text-gray-400">Welcome, {user?.displayName || user?.email}</p>
+      {/* Greeting */}
+      <header className="space-y-1">
+        <h1 className="text-3xl sm:text-4xl font-bold">
+          {greeting}, {user.displayName || user.email}!
+        </h1>
+        <p className="text-gray-400 text-sm sm:text-base">
+          {format(new Date(), 'EEEE do MMM yyyy')}
+        </p>
       </header>
 
-      <section className="flex flex-wrap gap-4">
-        <button
-          onClick={() => router.push('/create-group')}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-md shadow transition"
-        >
-          ➕ Create Group
-        </button>
+      <div className="border-t border-zinc-700 my-8" />
 
-        <button
-          onClick={() => router.push('/join-group')}
-          className="flex items-center gap-2 bg-lime-600 hover:bg-lime-500 text-white px-5 py-2 rounded-md shadow transition"
-        >
-          🔗 Join Group
-        </button>
+      <div className="flex flex-wrap justify-between gap-4 text-xs sm:text-base">
+        <div className="flex-1 min-w-[100px] bg-gray-800 p-4 rounded shadow text-center">
+          <p className="text-gray-400 h-10">Total Groups</p>
+          <p className="text-2xl font-bold text-indigo-300">{groups.length}</p>
+        </div>
+        <div className="flex-1 min-w-[100px] bg-gray-800 p-4 rounded shadow text-center">
+          <p className="text-gray-400 h-10">Days with Meetings</p>
+          <p className="text-2xl font-bold text-lime-300">{Object.keys(meetings).length}</p>
+        </div>
+        <div className="flex-1 min-w-[100px] bg-gray-800 p-4 rounded shadow text-center">
+          <p className="text-gray-400 h-10">Total Meeting Slots</p>
+          <p className="text-2xl font-bold text-pink-300">
+            {Object.values(meetings).reduce((acc, cur) => acc + cur.length, 0)}
+          </p>
+        </div>
+      </div>
 
-        <button
-          onClick={logout}
-          className="flex items-center gap-2 bg-rose-600 hover:bg-rose-500 text-white px-5 py-2 rounded-md shadow transition"
-        >
-          🚪 Logout
-        </button>
+      <div className="border-t border-zinc-700 my-8" />
+
+      {/* Meeting Schedule */}
+      <section className="bg-gray-800 p-6 rounded-lg shadow">
+        <h2 className="text-xl font-semibold mb-4">Upcoming Meeting Slots This Week</h2>
+        {meetingLoading ? (
+          <Skeleton
+            height={300}
+            width="100%"
+            baseColor="#1e2939"
+            highlightColor="#374151"
+            borderRadius="0.5rem"
+          />
+        ) : meetingData.length === 0 ? (
+          <p className="text-gray-400">No common time slots found for this week.</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={meetingData}>
+              <XAxis dataKey="day" stroke="#ffffff" />
+              <YAxis allowDecimals={false} stroke="#ffffff" />
+              <Tooltip
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                formatter={(value: number, name: string, props: any) => {
+                  const day = props.payload.day;
+                  const slots = meetings[day] || [];
+                  return [
+                    `${slots.map((s) => `${s.start}–${s.end}`).join(', ') || 'No meetings'}`,
+                    'Slots',
+                  ];
+                }}
+                contentStyle={{ backgroundColor: '#1f2937', color: '#fff', borderRadius: '0.5rem' }}
+                itemStyle={{ color: '#fff' }}
+              />
+
+              <Bar dataKey="count">
+                {meetingData.map((entry, index) => (
+                  <Cell
+                    key={`bar-${entry.day}`}
+                    fill={MEETING_COLORS[index % MEETING_COLORS.length]}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </section>
 
+      <div className="border-t border-zinc-700 my-8" />
+
+      {/* Group List */}
       <section>
         <h2 className="text-2xl font-semibold text-white mb-4">Your Groups</h2>
         {groupsLoading ? (
-          <Skeleton count={3} height={60} baseColor="#1f1f1f" highlightColor="#2e2e2e" />
+          <Skeleton count={3} height={60} baseColor="#1e2939" highlightColor="#374151" />
         ) : groups.length === 0 ? (
           <p className="text-gray-400">You’re not in any groups yet.</p>
         ) : (
@@ -89,16 +191,19 @@ export default function DashboardPage() {
             {groups.map((group) => (
               <div
                 key={group.id}
-                className="bg-zinc-800 p-4 rounded-lg shadow border border-zinc-700 space-y-2"
+                className="bg-gray-800 p-4 rounded-lg shadow border border-zinc-700 space-y-2"
               >
-                <h3 className="text-lg font-medium text-indigo-300">{group.name}</h3>
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-semibold text-indigo-300">{group.name}</h3>
+                </div>
+                <p className="text-gray-400 text-sm">Team collaboration group</p>
 
                 <div className="flex justify-between text-sm text-gray-400">
                   <button
                     onClick={() => router.push(`/groups/${group.id}/availability`)}
-                    className="hover:underline text-blue-400"
+                    className="hover:underline text-blue-400 cursor-pointer"
                   >
-                    Open Group →
+                    Open →
                   </button>
 
                   <button
@@ -106,7 +211,7 @@ export default function DashboardPage() {
                       navigator.clipboard.writeText(group.id);
                       toast.success('Copied!');
                     }}
-                    className="hover:text-gray-300"
+                    className="hover:text-gray-300 cursor-pointer"
                   >
                     📋 Copy ID
                   </button>

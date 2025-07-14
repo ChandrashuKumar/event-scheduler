@@ -3,14 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 
-import {
-  LayoutDashboard,
-  PlusSquare,
-  LogOut,
-  UserCircle,
-  X,
-  Group
-} from 'lucide-react';
+import { LayoutDashboard, PlusSquare, LogOut, UserCircle, X, Group } from 'lucide-react';
 
 interface SidebarProps {
   isOpen: boolean;
