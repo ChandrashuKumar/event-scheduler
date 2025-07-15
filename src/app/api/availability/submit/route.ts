@@ -23,9 +23,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const { groupId, day, startTime, endTime } = await req.json();
+    const { groupId, startDateTime, endDateTime } = await req.json();
 
-    if (!groupId || !day || !startTime || !endTime) {
+    if (!groupId || !startDateTime || !endDateTime) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
     }
 
@@ -33,9 +33,8 @@ export async function POST(req: NextRequest) {
       data: {
         userId: dbUser.id,
         groupId,
-        day,
-        startTime,
-        endTime,
+        startDateTime: new Date(startDateTime),
+        endDateTime: new Date(endDateTime),
       },
     });
 

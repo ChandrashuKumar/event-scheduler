@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
         groupId,
       },
       orderBy: {
-        day: 'asc',
+        startDateTime: 'asc', // Order by new datetime field
       },
     });
 

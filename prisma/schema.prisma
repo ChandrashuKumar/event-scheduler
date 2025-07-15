@@ -51,9 +51,8 @@ model Availability {
   id        String   @id @default(uuid())
   userId    String
   groupId   String
-  day       String   // e.g., "Monday"
-  startTime String   // e.g., "14:00"
-  endTime   String   // e.g., "15:30"
+  startDateTime DateTime
+  endDateTime   DateTime
 
   user      User   @relation(fields: [userId], references: [id])
   group     Group  @relation(fields: [groupId], references: [id])

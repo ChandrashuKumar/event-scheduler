@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     });
 
     return NextResponse.json(
-      members.map((m) => ({ id: m.userId, name: m.user.name || m.user.email }))
+      members.map((m) => ({ id: m.userId, name: m.user.name, email: m.user.email }))
     );
   } catch (error: unknown) {
     if (error instanceof Error) {

@@ -1,37 +1,36 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { type Availability } from '@/generated/prisma';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import DatePicker from 'react-multi-date-picker';
+import TimePicker from 'react-multi-date-picker/plugins/analog_time_picker';
+import 'react-multi-date-picker/styles/backgrounds/bg-dark.css';
+import { format } from 'date-fns';
 
 type GroupMemberBasic = {
   id: string;
   name: string;
+  email: string;
 };
 
 export default function AvailabilityForm() {
   const { groupId } = useParams();
-  const [day, setDay] = useState('');
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
+  const [startDateTime, setStartDateTime] = useState('');
+  const [endDateTime, setEndDateTime] = useState('');
   const [status, setStatus] = useState('');
   const [entries, setEntries] = useState<Availability[]>([]);
   const [members, setMembers] = useState<GroupMemberBasic[]>([]);
   const [loadingEntries, setLoadingEntries] = useState(true);
   const { user } = useAuth();
   const router = useRouter();
+  console.log(members);
+  
 
   useEffect(() => {
     const fetchAvailability = async () => {
@@ -79,18 +78,16 @@ export default function AvailabilityForm() {
       },
       body: JSON.stringify({
         groupId,
-        day,
-        startTime,
-        endTime,
+        startDateTime,
+        endDateTime,
       }),
     });
 
     const result = await res.json();
     if (res.ok) {
       setStatus('✅ Availability submitted!');
-      setDay('');
-      setStartTime('');
-      setEndTime('');
+      setStartDateTime('');
+      setEndDateTime('');
     } else {
       setStatus(`❌ Error: ${result.error}`);
     }
@@ -115,66 +112,68 @@ export default function AvailabilityForm() {
     }
   };
 
+  const groupedByDate = useMemo(() => {
+    const map = new Map<string, Availability[]>();
+
+    entries.forEach((entry) => {
+      const date = format(new Date(entry.startDateTime), 'yyyy-MM-dd');
+      if (!map.has(date)) map.set(date, []);
+      map.get(date)?.push(entry);
+    });
+
+    return Array.from(map.entries()).sort(([a], [b]) => (a > b ? 1 : -1));
+  }, [entries]);
+
   return (
     <div className="p-8 max-w-5xl mx-auto">
       <ToastContainer position="top-right" autoClose={3000} theme="dark" />
       <h1 className="text-2xl font-bold mb-6 text-center">Submit Availability</h1>
 
       {/* Form and Members Side-by-Side */}
-      <div className="flex flex-col md:flex-row gap-6">
+      <div className="flex flex-col md:flex-row gap-8">
         {/* Left: Form */}
         <form
           onSubmit={handleSubmit}
-          className="flex-1 space-y-6 bg-zinc-800 p-6 rounded-xl shadow-lg border border-zinc-700"
+          className="flex-1 space-y-10 bg-zinc-800 p-6 rounded-xl shadow-lg border border-zinc-700"
         >
-          <div>
-            <label className="block font-medium text-white mb-1">Day</label>
-            <Select value={day} onValueChange={setDay}>
-              <SelectTrigger className="w-full bg-zinc-900 border border-zinc-700 text-white">
-                <SelectValue placeholder="-- Select a day --" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-800 text-white border border-zinc-700">
-                {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(
-                  (d) => (
-                    <SelectItem key={d} value={d}>
-                      {d}
-                    </SelectItem>
-                  )
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex gap-4">
+          <div className="flex flex-col md:flex-row gap-6">
             <div className="flex-1">
-              <label className="block font-medium text-white mb-1">Start Time</label>
-              <input
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                className="bg-zinc-900 border border-zinc-700 px-3 py-2 rounded w-full text-white focus:ring-2 focus:ring-indigo-500"
-                required
+              <label className="block font-semibold text-white mb-4">Start Date & Time</label>
+              <DatePicker
+                value={startDateTime}
+                onChange={(val) => setStartDateTime(val?.toDate()?.toISOString() || '')}
+                format="YYYY/MM/DD HH:mm"
+                plugins={[<TimePicker key="start-time" hideSeconds />]}
+                containerClassName="w-full"
+                className="bg-dark"
+                inputClass="w-full px-4 py-2 bg-zinc-900 text-white placeholder-gray-400 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-600 transition"
+                placeholder="Select"
               />
             </div>
 
             <div className="flex-1">
-              <label className="block font-medium text-white mb-1">End Time</label>
-              <input
-                type="time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                className="bg-zinc-900 border border-zinc-700 px-3 py-2 rounded w-full text-white focus:ring-2 focus:ring-indigo-500"
-                required
+              <label className="block font-semibold text-white mb-4">End Date & Time</label>
+              <DatePicker
+                value={endDateTime}
+                onChange={(val) => setEndDateTime(val?.toDate()?.toISOString() || '')}
+                format="YYYY/MM/DD HH:mm"
+                plugins={[<TimePicker key="end-time" hideSeconds />]}
+                className="bg-dark"
+                containerClassName="w-full"
+                inputClass="w-full px-4 py-2 bg-zinc-900 text-white placeholder-gray-400 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-600 transition"
+                placeholder="Select"
               />
             </div>
           </div>
 
-          <button
-            type="submit"
-            className="bg-emerald-600 hover:bg-emerald-700 transition-colors text-white px-4 py-2 rounded w-full font-semibold"
-          >
-            ✅ Submit Availability
-          </button>
+          <div className="flex justify-center">
+            <button
+              type="submit"
+              className="bg-emerald-600 hover:bg-emerald-700 transition-colors text-white px-6 py-2 rounded font-semibold cursor-pointer"
+            >
+              ✅ Submit Availability
+            </button>
+          </div>
 
           {status && (
             <div className="text-sm mt-2 text-center bg-zinc-700 text-white py-2 px-3 rounded">
@@ -202,7 +201,7 @@ export default function AvailabilityForm() {
                     </div>
                     <div>
                       <p className="font-medium text-white">{m.name}</p>
-                      <p className="text-sm text-gray-400">member@team.app</p>
+                      <p className="text-sm text-gray-400">{m.email}</p>
                     </div>
                   </div>
                 </li>
@@ -233,28 +232,35 @@ export default function AvailabilityForm() {
               highlightColor="#525252"
               className="mb-1"
             />
-          ) : entries.length > 0 ? (
-            <ul className="space-y-3">
-              {entries.map((a) => (
-                <li
-                  key={a.id}
-                  className="flex justify-between items-center bg-zinc-700/40 px-4 py-2 rounded-md"
-                >
-                  <div className="text-white">
-                    <p className="font-medium">{a.day}</p>
-                    <p className="text-sm text-gray-300">
-                      {a.startTime} – {a.endTime}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => handleDelete(a.id)}
-                    className="text-sm bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded font-medium transition"
-                  >
-                    Remove
-                  </button>
-                </li>
+          ) : groupedByDate.length > 0 ? (
+            <div className="space-y-6">
+              {groupedByDate.map(([date, slots]: [string, Availability[]]) => (
+                <div key={date}>
+                  <h3 className="text-md font-semibold text-indigo-300 mb-2">
+                    {format(new Date(date), 'EEEE, MMMM do yyyy')}
+                  </h3>
+                  <ul className="space-y-2">
+                    {slots.map((slot: Availability) => (
+                      <li
+                        key={slot.id}
+                        className="flex justify-between items-center bg-zinc-700/40 px-4 py-2 rounded-md"
+                      >
+                        <span className="text-sm text-white">
+                          {format(new Date(slot.startDateTime), 'hh:mm a')} –{' '}
+                          {format(new Date(slot.endDateTime), 'hh:mm a')}
+                        </span>
+                        <button
+                          onClick={() => handleDelete(slot.id)}
+                          className="text-sm cursor-pointer bg-[#ff1450] hover:bg-[#e20b42] text-white px-4 py-2 rounded font-medium transition"
+                        >
+                          Remove
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               ))}
-            </ul>
+            </div>
           ) : (
             <p className="text-sm text-gray-400">No availability submitted yet.</p>
           )}
@@ -265,7 +271,7 @@ export default function AvailabilityForm() {
       <div className="mt-6 text-center">
         <button
           onClick={() => router.push(`/groups/${groupId}/result`)}
-          className="bg-purple-700 hover:bg-purple-800 transition-colors text-white px-5 py-2 rounded"
+          className="bg-purple-700 hover:bg-purple-800 transition-colors cursor-pointer text-white px-5 py-2 rounded"
         >
           🧠 View Common Time Slots
         </button>

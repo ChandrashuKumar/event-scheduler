@@ -76,23 +76,53 @@ export default function DashboardPage() {
   }, []);
 
   const meetingData = useMemo(() => {
-    const weekdayLabels = [
-      'Sunday',
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-    ];
-    const todayIndex = new Date().getDay(); // 0 (Sun) to 6 (Sat)
-    const upcomingWeekdays = weekdayLabels.slice(todayIndex);
+  const today = new Date();
+  const dayOfWeek = today.getDay(); // 0 = Sun, 6 = Sat
+  const remainingDays = Array.from({ length: 7 - dayOfWeek }, (_, i) => {
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
+    return date;
+  });
 
-    return upcomingWeekdays.map((day) => ({
-      day,
-      count: meetings[day]?.length || 0,
-    }));
-  }, [meetings]);
+  // Build slot map by date
+  const slotMap: Record<string, { start: string; end: string }[]> = {};
+
+  Object.values(meetings).flat().forEach((slot) => {
+    const dateKey = format(new Date(slot.start), 'yyyy-MM-dd');
+    if (!slotMap[dateKey]) {
+      slotMap[dateKey] = [];
+    }
+    slotMap[dateKey].push(slot);
+  });
+
+  return remainingDays.map((date) => {
+    const key = format(date, 'yyyy-MM-dd');
+    const slots = slotMap[key] || [];
+    return {
+      date: format(date, 'EEE dd MMM'), // e.g., Mon 14 Jul
+      count: slots.length,
+      slots,
+    };
+  });
+}, [meetings]);
+
+const upcomingSlots = useMemo(() => {
+  const now = new Date();
+
+  return Object.values(meetings)
+    .flat()
+    .filter((slot) => new Date(slot.start) > now);
+}, [meetings]);
+
+const upcomingDaysWithMeetings = useMemo(() => {
+  const uniqueDates = new Set(
+    upcomingSlots.map((slot) => format(new Date(slot.start), 'yyyy-MM-dd'))
+  );
+  return uniqueDates.size;
+}, [upcomingSlots]);
+
+
+
 
   if (loading) return <p className="p-8 text-white">Loading...</p>;
   if (!user) return null;
@@ -120,12 +150,12 @@ export default function DashboardPage() {
         </div>
         <div className="flex-1 min-w-[100px] bg-gray-800 p-4 rounded shadow text-center">
           <p className="text-gray-400 h-10">Days with Meetings</p>
-          <p className="text-2xl font-bold text-lime-300">{Object.keys(meetings).length}</p>
+          <p className="text-2xl font-bold text-lime-300">{upcomingDaysWithMeetings}</p>
         </div>
         <div className="flex-1 min-w-[100px] bg-gray-800 p-4 rounded shadow text-center">
           <p className="text-gray-400 h-10">Total Meeting Slots</p>
           <p className="text-2xl font-bold text-pink-300">
-            {Object.values(meetings).reduce((acc, cur) => acc + cur.length, 0)}
+            {upcomingSlots.length}
           </p>
         </div>
       </div>
@@ -148,17 +178,20 @@ export default function DashboardPage() {
         ) : (
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={meetingData}>
-              <XAxis dataKey="day" stroke="#ffffff" />
+              <XAxis dataKey="date" stroke="#ffffff" />
               <YAxis allowDecimals={false} stroke="#ffffff" />
               <Tooltip
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 formatter={(value: number, name: string, props: any) => {
-                  const day = props.payload.day;
-                  const slots = meetings[day] || [];
-                  return [
-                    `${slots.map((s) => `${s.start}–${s.end}`).join(', ') || 'No meetings'}`,
-                    'Slots',
-                  ];
+                  const slots = props.payload?.slots || [];
+                  const formatted = slots
+                    .map((s: { start: string; end: string }) => {
+                      const start = format(new Date(s.start), 'HH:mm');
+                      const end = format(new Date(s.end), 'HH:mm');
+                      return `${start}–${end}`;
+                    })
+                    .join(', ');
+                  return [formatted || 'No meetings', 'Slots'];
                 }}
                 contentStyle={{ backgroundColor: '#1f2937', color: '#fff', borderRadius: '0.5rem' }}
                 itemStyle={{ color: '#fff' }}
@@ -167,7 +200,7 @@ export default function DashboardPage() {
               <Bar dataKey="count">
                 {meetingData.map((entry, index) => (
                   <Cell
-                    key={`bar-${entry.day}`}
+                    key={`bar-${entry.date}`}
                     fill={MEETING_COLORS[index % MEETING_COLORS.length]}
                   />
                 ))}
@@ -206,17 +239,15 @@ export default function DashboardPage() {
 
                   {/* Copy Button */}
                   <button
-  onClick={() => {
-    navigator.clipboard.writeText(group.id);
-    toast.success('Group ID copied!');
-  }}
-  className="text-sm font-medium text-slate-200 hover:text-white px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-md transition cursor-pointer"
-  title="Copy Group ID"
->
-  📋 Copy ID
-</button>
-
-
+                    onClick={() => {
+                      navigator.clipboard.writeText(group.id);
+                      toast.success('Group ID copied!');
+                    }}
+                    className="text-sm font-medium text-slate-200 hover:text-white px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-md transition cursor-pointer"
+                    title="Copy Group ID"
+                  >
+                    📋 Copy ID
+                  </button>
                 </div>
 
                 {/* Description */}
