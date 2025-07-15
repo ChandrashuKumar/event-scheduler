@@ -8,6 +8,13 @@ import 'react-loading-skeleton/dist/skeleton.css';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { type Availability } from '@/generated/prisma';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 type GroupMemberBasic = {
   id: string;
@@ -118,46 +125,45 @@ export default function AvailabilityForm() {
         {/* Left: Form */}
         <form
           onSubmit={handleSubmit}
-          className="flex-1 space-y-6 bg-zinc-800 p-6 rounded-xl shadow-lg"
+          className="flex-1 space-y-6 bg-zinc-800 p-6 rounded-xl shadow-lg border border-zinc-700"
         >
           <div>
-            <label className="block font-medium mb-1">Day</label>
-            <select
-              value={day}
-              onChange={(e) => setDay(e.target.value)}
-              className="bg-zinc-800 border border-zinc-700 px-3 py-2 rounded w-full text-white"
-              required
-            >
-              <option value="">-- Select a day --</option>
-              {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(
-                (d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                )
-              )}
-            </select>
+            <label className="block font-medium text-white mb-1">Day</label>
+            <Select value={day} onValueChange={setDay}>
+              <SelectTrigger className="w-full bg-zinc-900 border border-zinc-700 text-white">
+                <SelectValue placeholder="-- Select a day --" />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-800 text-white border border-zinc-700">
+                {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(
+                  (d) => (
+                    <SelectItem key={d} value={d}>
+                      {d}
+                    </SelectItem>
+                  )
+                )}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex gap-4">
             <div className="flex-1">
-              <label className="block font-medium mb-1">Start Time</label>
+              <label className="block font-medium text-white mb-1">Start Time</label>
               <input
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="bg-zinc-800 border border-zinc-700 px-3 py-2 rounded w-full text-white"
+                className="bg-zinc-900 border border-zinc-700 px-3 py-2 rounded w-full text-white focus:ring-2 focus:ring-indigo-500"
                 required
               />
             </div>
 
             <div className="flex-1">
-              <label className="block font-medium mb-1">End Time</label>
+              <label className="block font-medium text-white mb-1">End Time</label>
               <input
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="bg-zinc-800 border border-zinc-700 px-3 py-2 rounded w-full text-white"
+                className="bg-zinc-900 border border-zinc-700 px-3 py-2 rounded w-full text-white focus:ring-2 focus:ring-indigo-500"
                 required
               />
             </div>
@@ -165,30 +171,50 @@ export default function AvailabilityForm() {
 
           <button
             type="submit"
-            className="bg-blue-700 hover:bg-blue-800 transition-colors text-white px-4 py-2 rounded w-full font-semibold"
+            className="bg-emerald-600 hover:bg-emerald-700 transition-colors text-white px-4 py-2 rounded w-full font-semibold"
           >
-            Submit
+            ✅ Submit Availability
           </button>
 
-          {status && <p className="text-sm mt-2 text-center">{status}</p>}
+          {status && (
+            <div className="text-sm mt-2 text-center bg-zinc-700 text-white py-2 px-3 rounded">
+              {status}
+            </div>
+          )}
         </form>
 
         {/* Right: Members */}
         <div className="flex-1 bg-zinc-800 p-6 rounded-xl shadow-lg">
-          <h2 className="text-lg font-semibold mb-3 text-center">Group Members</h2>
+          <h2 className="text-xl font-semibold text-white mb-1">Team Members</h2>
+          <p className="text-sm text-gray-400 mb-4">Invite your team members to collaborate.</p>
+
           {members.length > 0 ? (
-            <ul className="list-disc list-inside space-y-1">
+            <ul className="space-y-4">
               {members.map((m) => (
-                <li key={m.id}>{m.name}</li>
+                <li
+                  key={m.id}
+                  className="flex items-center justify-between bg-zinc-700/40 px-4 py-3 rounded-md hover:bg-zinc-700/60 transition"
+                >
+                  {/* Avatar and Info */}
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-full bg-gray-600 flex items-center justify-center text-white font-semibold text-sm">
+                      {m.name?.[0]?.toUpperCase() || '?'}
+                    </div>
+                    <div>
+                      <p className="font-medium text-white">{m.name}</p>
+                      <p className="text-sm text-gray-400">member@team.app</p>
+                    </div>
+                  </div>
+                </li>
               ))}
             </ul>
           ) : (
             <Skeleton
-              count={4}
-              height={20}
+              count={3}
+              height={50}
               baseColor="#313131"
               highlightColor="#525252"
-              className="mb-1"
+              className="rounded-md"
             />
           )}
         </div>
@@ -196,8 +222,9 @@ export default function AvailabilityForm() {
 
       {/* Submitted Availability (below form only, not full width) */}
       <div className="max-w-xl mx-auto mt-10">
-        <div className="bg-zinc-800 p-6 rounded-lg shadow">
-          <h2 className="text-lg font-semibold mb-3">Your Submitted Availability</h2>
+        <div className="bg-zinc-800 p-6 rounded-lg shadow border border-zinc-700">
+          <h2 className="text-lg font-semibold mb-3 text-white">Your Submitted Availability</h2>
+
           {loadingEntries ? (
             <Skeleton
               count={4}
@@ -207,15 +234,21 @@ export default function AvailabilityForm() {
               className="mb-1"
             />
           ) : entries.length > 0 ? (
-            <ul className="list-disc list-inside space-y-1">
+            <ul className="space-y-3">
               {entries.map((a) => (
-                <li key={a.id} className="flex justify-between items-center px-4 py-2 rounded">
-                  <span>
-                    {a.day}: {a.startTime} - {a.endTime}
-                  </span>
+                <li
+                  key={a.id}
+                  className="flex justify-between items-center bg-zinc-700/40 px-4 py-2 rounded-md"
+                >
+                  <div className="text-white">
+                    <p className="font-medium">{a.day}</p>
+                    <p className="text-sm text-gray-300">
+                      {a.startTime} – {a.endTime}
+                    </p>
+                  </div>
                   <button
                     onClick={() => handleDelete(a.id)}
-                    className="text-white bg-red-800 hover:bg-red-900 font-medium rounded-lg text-sm px-5 py-2.5 me-2 dark:bg-red-800 dark:hover:bg-red-900"
+                    className="text-sm bg-red-700 hover:bg-red-800 text-white px-4 py-2 rounded font-medium transition"
                   >
                     Remove
                   </button>

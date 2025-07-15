@@ -187,35 +187,55 @@ export default function DashboardPage() {
         ) : groups.length === 0 ? (
           <p className="text-gray-400">You’re not in any groups yet.</p>
         ) : (
-          <div className="grid sm:grid-cols-2 gap-4">
+          <div className="grid sm:grid-cols-2 gap-6">
             {groups.map((group) => (
               <div
                 key={group.id}
-                className="bg-gray-800 p-4 rounded-lg shadow border border-zinc-700 space-y-2"
+                className="relative group bg-gradient-to-br from-[#2a1a3f] to-[#1a1029] border border-[#3a2e4c] rounded-xl p-5 shadow-lg transition duration-300 hover:shadow-2xl"
               >
-                <div className="flex justify-between items-center">
-                  <h3 className="text-lg font-semibold text-indigo-300">{group.name}</h3>
-                </div>
-                <p className="text-gray-400 text-sm">Team collaboration group</p>
+                {/* Top Row */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-fuchsia-600 text-white text-sm font-semibold rounded-full w-9 h-9 flex items-center justify-center shadow">
+                      {group.name.charAt(0).toUpperCase()}
+                    </div>
+                    <h3 className="text-lg font-semibold text-white truncate max-w-[200px]">
+                      {group.name}
+                    </h3>
+                  </div>
 
-                <div className="flex justify-between text-sm text-gray-400">
+                  {/* Copy Button */}
+                  <button
+  onClick={() => {
+    navigator.clipboard.writeText(group.id);
+    toast.success('Group ID copied!');
+  }}
+  className="text-sm font-medium text-slate-200 hover:text-white px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-md transition cursor-pointer"
+  title="Copy Group ID"
+>
+  📋 Copy ID
+</button>
+
+
+                </div>
+
+                {/* Description */}
+                <p className="text-zinc-400 text-sm mb-4">
+                  Collaborate and resolve availability with your team.
+                </p>
+
+                {/* CTA */}
+                <div className="flex justify-end">
                   <button
                     onClick={() => router.push(`/groups/${group.id}/availability`)}
-                    className="hover:underline text-blue-400 cursor-pointer"
+                    className="text-sm font-medium px-4 py-2 bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded-md transition cursor-pointer"
                   >
-                    Open →
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(group.id);
-                      toast.success('Copied!');
-                    }}
-                    className="hover:text-gray-300 cursor-pointer"
-                  >
-                    📋 Copy ID
+                    Open Group →
                   </button>
                 </div>
+
+                {/* Subtle hover ring */}
+                <div className="absolute inset-0 rounded-xl ring-1 ring-fuchsia-500/10 group-hover:ring-fuchsia-500/40 transition pointer-events-none" />
               </div>
             ))}
           </div>
