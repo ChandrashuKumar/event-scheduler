@@ -41,7 +41,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       )}
 
       <div className="flex-1 flex flex-col w-full overflow-hidden">
-        <header className="w-full px-4 py-3 border-b border-gray-700 flex items-center justify-between bg-zinc-900 text-white">
+        <header className="w-full px-4 py-3 border-b border-gray-700 flex items-center justify-between bg-base-200 text-white">
           <button
             onClick={() => setSidebarOpen(true)}
             className="btn btn-square btn-ghost md:hidden"
@@ -50,7 +50,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
         </header>
 
-        <main className="flex-1 overflow-y-auto px-4 py-6 max-w-full bg-zinc-950 text-white">
+        <main className="flex-1 overflow-y-auto max-w-full bg-zinc-950 text-white">
           <LocalizationProvider dateAdapter={AdapterDateFns}>
             {children}
           </LocalizationProvider>

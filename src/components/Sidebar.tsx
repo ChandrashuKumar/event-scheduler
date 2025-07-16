@@ -100,7 +100,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               href={path}
               className={`
         flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200
-        ${isActive ? 'bg-primary text-white' : 'text-gray-700 hover:bg-base-300'}
+        ${isActive ? 'bg-primary text-white' : 'text-gray-400 hover:bg-base-300'}
       `}
               onClick={onClose}
             >
