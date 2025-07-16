@@ -34,32 +34,33 @@ export default function ResolvedSlots({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {intervals.map((interval, idx) => (
                   <div
-  key={idx}
-  className="bg-zinc-700/60 hover:bg-zinc-700 transition-all rounded-lg px-4 py-3 shadow border border-zinc-600 text-white space-y-1"
->
-  <div className="grid grid-cols-[80px_1fr] items-center">
-    <span className="text-emerald-400 font-semibold flex items-center">🟢 Start:</span>
-    <span className="text-lg font-mono text-white">
-      {new Date(interval.start).toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-      })}
-    </span>
-  </div>
+                    key={idx}
+                    className="bg-zinc-700/60 hover:bg-zinc-700 transition-all rounded-lg px-4 py-3 shadow border border-zinc-600 text-white space-y-1"
+                  >
+                    <div className="grid grid-cols-[80px_1fr] items-center">
+                      <span className="text-emerald-400 font-semibold flex items-center">
+                        🟢 Start:
+                      </span>
+                      <span className="text-lg font-mono text-white">
+                        {new Date(interval.start).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: true,
+                        })}
+                      </span>
+                    </div>
 
-  <div className="grid grid-cols-[80px_1fr] items-center">
-    <span className="text-rose-400 font-semibold flex items-center">🔴 End:</span>
-    <span className="text-lg font-mono text-white">
-      {new Date(interval.end).toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-      })}
-    </span>
-  </div>
-</div>
-
+                    <div className="grid grid-cols-[80px_1fr] items-center">
+                      <span className="text-rose-400 font-semibold flex items-center">🔴 End:</span>
+                      <span className="text-lg font-mono text-white">
+                        {new Date(interval.end).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          hour12: true,
+                        })}
+                      </span>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>

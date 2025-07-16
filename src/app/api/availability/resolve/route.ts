@@ -3,7 +3,6 @@ import { PrismaClient } from '@/generated/prisma';
 
 const prisma = new PrismaClient();
 
-
 function intersectIntervals(a: [number, number][], b: [number, number][]) {
   let i = 0,
     j = 0;

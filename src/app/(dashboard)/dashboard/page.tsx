@@ -35,7 +35,7 @@ export default function DashboardPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      
+
       setGroups(Array.isArray(data) ? data : []);
       setGroupsLoading(false);
     };
@@ -75,53 +75,52 @@ export default function DashboardPage() {
   }, []);
 
   const meetingData = useMemo(() => {
-  const today = new Date();
-  const dayOfWeek = today.getDay(); // 0 = Sun, 6 = Sat
-  const remainingDays = Array.from({ length: 7 - dayOfWeek }, (_, i) => {
-    const date = new Date(today);
-    date.setDate(today.getDate() + i);
-    return date;
-  });
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // 0 = Sun, 6 = Sat
+    const remainingDays = Array.from({ length: 7 - dayOfWeek }, (_, i) => {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      return date;
+    });
 
-  // Build slot map by date
-  const slotMap: Record<string, { start: string; end: string }[]> = {};
+    // Build slot map by date
+    const slotMap: Record<string, { start: string; end: string }[]> = {};
 
-  Object.values(meetings).flat().forEach((slot) => {
-    const dateKey = format(new Date(slot.start), 'yyyy-MM-dd');
-    if (!slotMap[dateKey]) {
-      slotMap[dateKey] = [];
-    }
-    slotMap[dateKey].push(slot);
-  });
+    Object.values(meetings)
+      .flat()
+      .forEach((slot) => {
+        const dateKey = format(new Date(slot.start), 'yyyy-MM-dd');
+        if (!slotMap[dateKey]) {
+          slotMap[dateKey] = [];
+        }
+        slotMap[dateKey].push(slot);
+      });
 
-  return remainingDays.map((date) => {
-    const key = format(date, 'yyyy-MM-dd');
-    const slots = slotMap[key] || [];
-    return {
-      date: format(date, 'EEE dd MMM'), // e.g., Mon 14 Jul
-      count: slots.length,
-      slots,
-    };
-  });
-}, [meetings]);
+    return remainingDays.map((date) => {
+      const key = format(date, 'yyyy-MM-dd');
+      const slots = slotMap[key] || [];
+      return {
+        date: format(date, 'EEE dd MMM'), // e.g., Mon 14 Jul
+        count: slots.length,
+        slots,
+      };
+    });
+  }, [meetings]);
 
-const upcomingSlots = useMemo(() => {
-  const now = new Date();
+  const upcomingSlots = useMemo(() => {
+    const now = new Date();
 
-  return Object.values(meetings)
-    .flat()
-    .filter((slot) => new Date(slot.start) > now);
-}, [meetings]);
+    return Object.values(meetings)
+      .flat()
+      .filter((slot) => new Date(slot.start) > now);
+  }, [meetings]);
 
-const upcomingDaysWithMeetings = useMemo(() => {
-  const uniqueDates = new Set(
-    upcomingSlots.map((slot) => format(new Date(slot.start), 'yyyy-MM-dd'))
-  );
-  return uniqueDates.size;
-}, [upcomingSlots]);
-
-
-
+  const upcomingDaysWithMeetings = useMemo(() => {
+    const uniqueDates = new Set(
+      upcomingSlots.map((slot) => format(new Date(slot.start), 'yyyy-MM-dd'))
+    );
+    return uniqueDates.size;
+  }, [upcomingSlots]);
 
   if (loading) return <p className="p-8 text-white">Loading...</p>;
   if (!user) return null;
@@ -153,9 +152,7 @@ const upcomingDaysWithMeetings = useMemo(() => {
         </div>
         <div className="flex-1 min-w-[100px] bg-gray-800 p-4 rounded shadow text-center">
           <p className="text-gray-400 h-10">Total Meeting Slots</p>
-          <p className="text-2xl font-bold text-pink-300">
-            {upcomingSlots.length}
-          </p>
+          <p className="text-2xl font-bold text-pink-300">{upcomingSlots.length}</p>
         </div>
       </div>
 

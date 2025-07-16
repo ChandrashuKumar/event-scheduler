@@ -11,12 +11,15 @@ interface Props {
 }
 
 export default function AvailabilityList({ entries, loading, handleDelete }: Props) {
-  const groupedByDate = entries.reduce((acc, entry) => {
-    const date = format(new Date(entry.startDateTime), 'yyyy-MM-dd');
-    if (!acc[date]) acc[date] = [];
-    acc[date].push(entry);
-    return acc;
-  }, {} as Record<string, Availability[]>);
+  const groupedByDate = entries.reduce(
+    (acc, entry) => {
+      const date = format(new Date(entry.startDateTime), 'yyyy-MM-dd');
+      if (!acc[date]) acc[date] = [];
+      acc[date].push(entry);
+      return acc;
+    },
+    {} as Record<string, Availability[]>
+  );
 
   const sorted = Object.entries(groupedByDate).sort(([a], [b]) => a.localeCompare(b));
 
@@ -26,7 +29,13 @@ export default function AvailabilityList({ entries, loading, handleDelete }: Pro
         <h2 className="text-lg font-semibold mb-3 text-white">Your Submitted Availability</h2>
 
         {loading ? (
-          <Skeleton count={4} height={20} baseColor="#313131" highlightColor="#525252" className="mb-1" />
+          <Skeleton
+            count={4}
+            height={20}
+            baseColor="#313131"
+            highlightColor="#525252"
+            className="mb-1"
+          />
         ) : sorted.length > 0 ? (
           <div className="space-y-6">
             {sorted.map(([date, slots]) => (

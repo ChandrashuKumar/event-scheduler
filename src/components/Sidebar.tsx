@@ -29,7 +29,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isJoinOpen, setIsJoinOpen] = useState(false);
 
-
   const handleCreateGroup = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = await user?.getIdToken();

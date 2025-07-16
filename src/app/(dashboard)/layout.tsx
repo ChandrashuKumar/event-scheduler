@@ -51,9 +51,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         <main className="flex-1 overflow-y-auto max-w-full bg-zinc-950 text-white">
-          <LocalizationProvider dateAdapter={AdapterDateFns}>
-            {children}
-          </LocalizationProvider>
+          <LocalizationProvider dateAdapter={AdapterDateFns}>{children}</LocalizationProvider>
         </main>
       </div>
     </div>

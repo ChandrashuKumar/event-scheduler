@@ -12,7 +12,6 @@ import GroupMembers from '@/components/GroupMembers';
 import AvailabilityList from '@/components/AvailabilityList';
 import ResolvedSlots from '@/components/ResolvedSlots';
 
-
 export default function GroupPage() {
   const { groupId } = useParams();
   const { user } = useAuth();
@@ -131,11 +130,7 @@ export default function GroupPage() {
         <GroupMembers members={members} />
       </div>
 
-      <AvailabilityList
-        entries={entries}
-        loading={loadingEntries}
-        handleDelete={handleDelete}
-      />
+      <AvailabilityList entries={entries} loading={loadingEntries} handleDelete={handleDelete} />
 
       {/* View Slots Button */}
       <div className="mt-6 text-center">
