@@ -13,6 +13,7 @@ Checkout Live at https://event-scheduler-lovat-seven.vercel.app/
 - 🤝 View common time slots across group members
 - 🧠 Intelligent merging of user availability
 - 📋 Skeleton loaders and polished UI for seamless UX
+- ⚡ Optimized data fetching using **SWR** for caching & revalidation
 - 🧑‍💼 Admin can copy group ID for sharing
 - 📊 Prisma ORM for clean database interaction
 - ☁️ Deployed via **Vercel**
@@ -27,6 +28,7 @@ Checkout Live at https://event-scheduler-lovat-seven.vercel.app/
 - **Authentication**: Firebase Auth (Google provider)
 - **Styling**: Tailwind CSS
 - **Notifications**: React Toastify
+- **Data Fetching & Caching**: SWR
 - **Loading UI**: react-loading-skeleton
 
 ---
