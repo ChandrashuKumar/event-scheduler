@@ -1,6 +1,6 @@
 'use client';
-
-import { useEffect, useMemo, useState } from 'react';
+import useSWR from 'swr';
+import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import Skeleton from 'react-loading-skeleton';
@@ -12,60 +12,51 @@ import { BarChart, XAxis, YAxis, Tooltip, Bar, Cell, ResponsiveContainer } from 
 import { Group } from '@/generated/prisma/client';
 
 const MEETING_COLORS = ['#22c55e', '#3b82f6', '#eab308', '#ec4899', '#a78bfa'];
+type Slot = {
+  start: string;
+  end: string;
+};
+
+type MeetingsMap = Record<string, Slot[]>;
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
 
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [groupsLoading, setGroupsLoading] = useState(true);
-  const [meetings, setMeetings] = useState<Record<string, { start: string; end: string }[]>>({});
-  const [meetingLoading, setMeetingLoading] = useState(true);
-
   useEffect(() => {
     if (!user && !loading) {
       router.push('/login');
     }
-
-    const fetchGroups = async () => {
-      if (!user) return;
-      setGroupsLoading(true);
-      const token = await user.getIdToken();
-      const res = await fetch('/api/group/list', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-
-      setGroups(Array.isArray(data) ? data : []);
-      setGroupsLoading(false);
-    };
-
-    const fetchMeetings = async () => {
-      if (!user) return;
-      setMeetingLoading(true);
-      try {
-        const token = await user.getIdToken();
-        const groupList = await fetch('/api/group/list', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const groupData = await groupList.json();
-        const group = Array.isArray(groupData) ? groupData[0] : null;
-        if (!group) return;
-
-        const res = await fetch(`/api/availability/resolve?groupId=${group.id}`);
-        const data = await res.json();
-        setMeetings(data || {});
-      } catch (e) {
-        console.error(e);
-        toast.error('Failed to fetch meetings');
-      } finally {
-        setMeetingLoading(false);
-      }
-    };
-
-    fetchGroups();
-    fetchMeetings();
   }, [user, loading, router]);
+
+  const fetcherWithToken = async (url: string, token: string | undefined) => {
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!res.ok) throw new Error('Failed to fetch');
+    return res.json();
+  };
+
+  const { data: groupList = [], isLoading: groupsLoading } = useSWR(
+    user ? ['/api/group/list', user] : null,
+    async ([url, user]) => {
+      const token = await user.getIdToken();
+      return fetcherWithToken(url, token);
+    }
+  );
+
+  const group = groupList[0];
+  const groups: Group[] = groupList;
+
+  const { data: meetings = {}, isLoading: meetingLoading } = useSWR<MeetingsMap>(
+    group ? ([`/api/availability/resolve?groupId=${group.id}`, user] as const) : null,
+    async ([url, u]: [string, typeof user]) => {
+      const token = await u?.getIdToken();
+      return fetcherWithToken(url, token);
+    }
+  );
 
   const greeting = useMemo(() => {
     const hour = new Date().getHours();
@@ -75,26 +66,31 @@ export default function DashboardPage() {
   }, []);
 
   const meetingData = useMemo(() => {
+    const now = new Date();
     const today = new Date();
     const dayOfWeek = today.getDay(); // 0 = Sun, 6 = Sat
+
+    // Upcoming days in the week including today
     const remainingDays = Array.from({ length: 7 - dayOfWeek }, (_, i) => {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
       return date;
     });
 
-    // Build slot map by date
+    // Build slot map by date (but exclude past slots)
+    const filteredSlots = Object.values(meetings)
+      .flat()
+      .filter((slot) => new Date(slot.start) > now);
+
     const slotMap: Record<string, { start: string; end: string }[]> = {};
 
-    Object.values(meetings)
-      .flat()
-      .forEach((slot) => {
-        const dateKey = format(new Date(slot.start), 'yyyy-MM-dd');
-        if (!slotMap[dateKey]) {
-          slotMap[dateKey] = [];
-        }
-        slotMap[dateKey].push(slot);
-      });
+    filteredSlots.forEach((slot) => {
+      const dateKey = format(new Date(slot.start), 'yyyy-MM-dd');
+      if (!slotMap[dateKey]) {
+        slotMap[dateKey] = [];
+      }
+      slotMap[dateKey].push(slot);
+    });
 
     return remainingDays.map((date) => {
       const key = format(date, 'yyyy-MM-dd');

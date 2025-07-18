@@ -1,5 +1,3 @@
-'use client';
-
 import DatePicker from 'react-multi-date-picker';
 import TimePicker from 'react-multi-date-picker/plugins/analog_time_picker';
 

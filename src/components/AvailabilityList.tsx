@@ -1,5 +1,3 @@
-'use client';
-
 import { Availability } from '@/generated/prisma';
 import Skeleton from 'react-loading-skeleton';
 import { format } from 'date-fns';

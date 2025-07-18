@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation';
 import { Menu } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import { useAuth } from '@/context/AuthContext';
-import { LocalizationProvider } from '@mui/x-date-pickers';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -51,7 +49,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         <main className="flex-1 overflow-y-auto max-w-full bg-zinc-950 text-white">
-          <LocalizationProvider dateAdapter={AdapterDateFns}>{children}</LocalizationProvider>
+          {children}
         </main>
       </div>
     </div>

@@ -1,11 +1,11 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import useSWR from 'swr';
 import { useAuth } from '@/context/AuthContext';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Availability } from '@/generated/prisma';
 
 import AvailabilityForm from '@/components/AvailabilityForm';
 import GroupMembers from '@/components/GroupMembers';
@@ -19,77 +19,71 @@ export default function GroupPage() {
   const [startDateTime, setStartDateTime] = useState('');
   const [endDateTime, setEndDateTime] = useState('');
   const [status, setStatus] = useState('');
-
-  const [entries, setEntries] = useState<Availability[]>([]);
-  const [members, setMembers] = useState<{ id: string; name: string; email: string }[]>([]);
-  const [loadingEntries, setLoadingEntries] = useState(true);
-
   const [resolved, setResolved] = useState<Record<string, { start: string; end: string }[]>>({});
   const [loadingResolved, setLoadingResolved] = useState(false);
   const [showResults, setShowResults] = useState(false);
 
-  useEffect(() => {
-    const fetchAvailability = async () => {
-      if (!user) return;
-      setLoadingEntries(true);
-      const token = await user.getIdToken();
-      const res = await fetch(`/api/availability/list?groupId=${groupId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setEntries(data);
-      setLoadingEntries(false);
-    };
+  const fetcherWithToken = async (url: string) => {
+    const token = await user?.getIdToken();
+    const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+    if (!res.ok) throw new Error('Failed to fetch');
+    return res.json();
+  };
 
-    const fetchMembers = async () => {
-      if (!user) return;
-      const token = await user.getIdToken();
-      const res = await fetch(`/api/group/members?groupId=${groupId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setMembers(data);
-    };
+  const {
+    data: entries,
+    isLoading: loadingEntries,
+    mutate: mutateEntries,
+  } = useSWR(
+    user ? `/api/availability/list?groupId=${groupId}` : null,
+    fetcherWithToken
+  );
 
-    fetchAvailability();
-    fetchMembers();
-  }, [user, groupId, status]);
+  const {
+    data: members,
+  } = useSWR(user ? `/api/group/members?groupId=${groupId}` : null, fetcherWithToken);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = await user?.getIdToken();
-    const res = await fetch('/api/availability/submit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ groupId, startDateTime, endDateTime }),
-    });
+    try {
+      const token = await user?.getIdToken();
+      const res = await fetch('/api/availability/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ groupId, startDateTime, endDateTime }),
+      });
 
-    const result = await res.json();
-    if (res.ok) {
-      setStatus('✅ Availability submitted!');
-      setStartDateTime('');
-      setEndDateTime('');
-    } else {
-      setStatus(`❌ Error: ${result.error}`);
+      const result = await res.json();
+      if (res.ok) {
+        setStatus('✅ Availability submitted!');
+        setStartDateTime('');
+        setEndDateTime('');
+        mutateEntries(); // re-fetch availability list
+      } else {
+        setStatus(`❌ Error: ${result.error}`);
+      }
+    } catch {
+      setStatus('❌ Error submitting availability');
     }
   };
 
   const handleDelete = async (availabilityId: string) => {
-    const token = await user?.getIdToken();
-    const res = await fetch(`/api/availability/remove`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ availabilityId }),
-    });
+    try {
+      const token = await user?.getIdToken();
+      const res = await fetch('/api/availability/remove', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ availabilityId }),
+      });
 
-    if (res.ok) {
-      toast.success('Availability deleted!');
-      setEntries((prev) => prev.filter((entry) => entry.id !== availabilityId));
-    } else {
-      toast.error('Error deleting availability');
+      if (res.ok) {
+        toast.success('Availability deleted!');
+        mutateEntries();
+      } else {
+        toast.error('Error deleting availability');
+      }
+    } catch {
+      toast.error('Server error');
     }
   };
 
@@ -116,7 +110,6 @@ export default function GroupPage() {
       <ToastContainer position="top-right" autoClose={3000} theme="dark" />
       <h1 className="text-2xl font-bold mb-6 text-center">Submit Availability</h1>
 
-      {/* Form + Members Side-by-Side */}
       <div className="flex flex-col md:flex-row gap-8">
         <AvailabilityForm
           startDateTime={startDateTime}
@@ -126,13 +119,15 @@ export default function GroupPage() {
           handleSubmit={handleSubmit}
           status={status}
         />
-
-        <GroupMembers members={members} />
+        <GroupMembers members={members || []} />
       </div>
 
-      <AvailabilityList entries={entries} loading={loadingEntries} handleDelete={handleDelete} />
+      <AvailabilityList
+        entries={entries || []}
+        loading={loadingEntries}
+        handleDelete={handleDelete}
+      />
 
-      {/* View Slots Button */}
       <div className="mt-6 text-center">
         <button
           onClick={fetchResolvedSlots}
