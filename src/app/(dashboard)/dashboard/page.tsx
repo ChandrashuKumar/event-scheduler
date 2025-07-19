@@ -47,14 +47,22 @@ export default function DashboardPage() {
     }
   );
 
-  const group = groupList[0];
   const groups: Group[] = groupList;
 
-  const { data: meetings = {}, isLoading: meetingLoading } = useSWR<MeetingsMap>(
-    group ? ([`/api/availability/resolve?groupId=${group.id}`, user] as const) : null,
-    async ([url, u]: [string, typeof user]) => {
-      const token = await u?.getIdToken();
-      return fetcherWithToken(url, token);
+  const { data: meetings = {}, isLoading: meetingLoading } = useSWR<Record<string, MeetingsMap>>(
+    groups.length ? ['/api/availability/resolve', groups] : null,
+    async () => {
+      const token = await user?.getIdToken();
+      const res = await fetch('/api/availability/resolve', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ groupIds: groups.map((g) => g.id) }),
+      });
+      if (!res.ok) throw new Error('Failed to fetch multi-group meetings');
+      return res.json();
     }
   );
 
@@ -68,47 +76,48 @@ export default function DashboardPage() {
   const meetingData = useMemo(() => {
     const now = new Date();
     const today = new Date();
-    const dayOfWeek = today.getDay(); // 0 = Sun, 6 = Sat
+    const dayOfWeek = today.getDay();
 
-    // Upcoming days in the week including today
     const remainingDays = Array.from({ length: 7 - dayOfWeek }, (_, i) => {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
       return date;
     });
 
-    // Build slot map by date (but exclude past slots)
-    const filteredSlots = Object.values(meetings)
-      .flat()
-      .filter((slot) => new Date(slot.start) > now);
+    // Build merged map from all groups
+    const slotMap: Record<string, { start: string; end: string; group: string }[]> = {};
 
-    const slotMap: Record<string, { start: string; end: string }[]> = {};
-
-    filteredSlots.forEach((slot) => {
-      const dateKey = format(new Date(slot.start), 'yyyy-MM-dd');
-      if (!slotMap[dateKey]) {
-        slotMap[dateKey] = [];
-      }
-      slotMap[dateKey].push(slot);
+    Object.entries(meetings).forEach(([groupId, dateMap]) => {
+      const groupName = groups.find((g) => g.id === groupId)?.name || 'Unknown Group';
+      Object.values(dateMap)
+        .flat()
+        .forEach((slot) => {
+          if (new Date(slot.start) <= now) return;
+          const dateKey = format(new Date(slot.start), 'yyyy-MM-dd');
+          if (!slotMap[dateKey]) slotMap[dateKey] = [];
+          slotMap[dateKey].push({ ...slot, group: groupName });
+        });
     });
 
     return remainingDays.map((date) => {
       const key = format(date, 'yyyy-MM-dd');
       const slots = slotMap[key] || [];
       return {
-        date: format(date, 'EEE dd MMM'), // e.g., Mon 14 Jul
+        date: format(date, 'EEE dd MMM'),
         count: slots.length,
         slots,
       };
     });
-  }, [meetings]);
+  }, [meetings, groups]);
 
   const upcomingSlots = useMemo(() => {
     const now = new Date();
 
-    return Object.values(meetings)
-      .flat()
-      .filter((slot) => new Date(slot.start) > now);
+    return Object.values(meetings).flatMap((groupSlots) =>
+      Object.values(groupSlots)
+        .flat()
+        .filter((slot) => new Date(slot.start) > now)
+    );
   }, [meetings]);
 
   const upcomingDaysWithMeetings = useMemo(() => {
@@ -117,6 +126,43 @@ export default function DashboardPage() {
     );
     return uniqueDates.size;
   }, [upcomingSlots]);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    const { slots } = payload[0].payload;
+
+    return (
+      <div className="bg-gradient-to-br from-[#1f1f2e] to-[#2c2c3e] border border-fuchsia-700 p-4 rounded-lg text-sm text-white shadow-2xl max-w-sm">
+        <p className="font-semibold text-fuchsia-400 mb-3 text-base">
+          📅 {label}
+        </p>
+        {slots && slots.length > 0 ? (
+          <ul className="space-y-2">
+            {slots.map(
+              (s: { start: string; end: string; group: string }, idx: number) => (
+                <li key={idx} className="flex items-center justify-between text-white">
+                  <span className="font-mono text-sky-300">
+                    {format(new Date(s.start), 'HH:mm')}–{format(new Date(s.end), 'HH:mm')}
+                  </span>
+                  <span className="ml-4 px-2 py-0.5 text-xs rounded bg-fuchsia-700/30 text-fuchsia-300 font-medium">
+                    {s.group}
+                  </span>
+                </li>
+              )
+            )}
+          </ul>
+        ) : (
+          <p className="text-gray-400 italic">No meetings</p>
+        )}
+      </div>
+    );
+  }
+
+  return null;
+};
+
+
 
   if (loading) return <p className="p-8 text-white">Loading...</p>;
   if (!user) return null;
@@ -172,22 +218,8 @@ export default function DashboardPage() {
             <BarChart data={meetingData}>
               <XAxis dataKey="date" stroke="#ffffff" />
               <YAxis allowDecimals={false} stroke="#ffffff" />
-              <Tooltip
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                formatter={(value: number, name: string, props: any) => {
-                  const slots = props.payload?.slots || [];
-                  const formatted = slots
-                    .map((s: { start: string; end: string }) => {
-                      const start = format(new Date(s.start), 'HH:mm');
-                      const end = format(new Date(s.end), 'HH:mm');
-                      return `${start}–${end}`;
-                    })
-                    .join(', ');
-                  return [formatted || 'No meetings', 'Slots'];
-                }}
-                contentStyle={{ backgroundColor: '#1f2937', color: '#fff', borderRadius: '0.5rem' }}
-                itemStyle={{ color: '#fff' }}
-              />
+              <Tooltip content={<CustomTooltip />} />
+
 
               <Bar dataKey="count">
                 {meetingData.map((entry, index) => (
