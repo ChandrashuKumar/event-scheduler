@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { LayoutDashboard, PlusSquare, LogOut, UserCircle, X, Group } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { mutate } from 'swr';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -45,6 +46,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       toast.success(`Created group: ${data.name}`);
       setGroupName('');
       setIsCreateOpen(false);
+      mutate(['/api/group/list', user]);
     } else {
       const error = await res.json();
       alert(`Error: ${error.error}`);
@@ -53,17 +55,29 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
   const handleJoinGroup = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = await user?.getIdToken();
-    await fetch('/api/group/join', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ code: groupCode }),
-    });
-    setGroupCode('');
-    setIsJoinOpen(false);
+    try {
+      const token = await user?.getIdToken();
+      const res = await fetch('/api/group/join', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ groupId: groupCode }),
+      });
+      if (res.ok) {
+        const result = await res.json();
+        toast.success(`Joined ${result.groupName} successfully!`);
+        setGroupCode('');
+        setIsJoinOpen(false);
+        mutate(['/api/group/list', user]);
+      } else {
+        const error = await res.json();
+        toast.error(error.error || 'Failed to join group');
+      }
+    } catch {
+      toast.error('Something went wrong.');
+    }
   };
 
   return (
