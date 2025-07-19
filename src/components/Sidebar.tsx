@@ -95,6 +95,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       }
     } catch {
       toast.error('Something went wrong.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

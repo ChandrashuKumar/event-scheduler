@@ -1,4 +1,4 @@
-// /app/api/availability/resolve/route.ts 
+// /app/api/availability/resolve/route.ts
 
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@/generated/prisma';

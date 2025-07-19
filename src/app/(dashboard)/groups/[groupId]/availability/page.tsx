@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import useSWR from 'swr';
 import { useAuth } from '@/context/AuthContext';
@@ -15,6 +15,8 @@ import ResolvedSlots from '@/components/ResolvedSlots';
 export default function GroupPage() {
   const { groupId } = useParams();
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const groupName = searchParams?.get('name');
 
   const [startDateTime, setStartDateTime] = useState('');
   const [endDateTime, setEndDateTime] = useState('');
@@ -34,14 +36,12 @@ export default function GroupPage() {
     data: entries,
     isLoading: loadingEntries,
     mutate: mutateEntries,
-  } = useSWR(
-    user ? `/api/availability/list?groupId=${groupId}` : null,
+  } = useSWR(user ? `/api/availability/list?groupId=${groupId}` : null, fetcherWithToken);
+
+  const { data: members } = useSWR(
+    user ? `/api/group/members?groupId=${groupId}` : null,
     fetcherWithToken
   );
-
-  const {
-    data: members,
-  } = useSWR(user ? `/api/group/members?groupId=${groupId}` : null, fetcherWithToken);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,9 +106,19 @@ export default function GroupPage() {
   };
 
   return (
-    <div className="p-4 sm:p-10 space-y-8 text-white bg-gray-900 min-h-screen overflow-x-hidden">
+    <div className="pt-1 sm:pt-2 px-4 sm:px-8 pb-10 sm:pb-18 space-y-10 text-white bg-gray-900 min-h-screen overflow-x-hidden">
       <ToastContainer position="top-right" autoClose={3000} theme="dark" />
-      <h1 className="text-2xl font-bold mb-6 text-center">Submit Availability</h1>
+      <h1 className="text-2xl font-bold text-center">Submit Availability</h1>
+      {groupName && (
+        <div className="text-center mb-10 -mt-4">
+          <div className="inline-block">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-indigo-300 tracking-wide">
+              {groupName}
+            </h2>
+            <div className="h-1 bg-indigo-300 mt-1 rounded-full" />
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col md:flex-row gap-8">
         <AvailabilityForm

@@ -48,9 +48,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </button>
         </header>
 
-        <main className="flex-1 overflow-y-auto max-w-full bg-zinc-950 text-white">
-          {children}
-        </main>
+        <main className="flex-1 overflow-y-auto max-w-full bg-zinc-950 text-white">{children}</main>
       </div>
     </div>
   );

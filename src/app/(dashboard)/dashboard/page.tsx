@@ -1,5 +1,5 @@
 'use client';
-import useSWR from 'swr';
+import useSWR, { mutate } from 'swr';
 import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
@@ -129,18 +129,15 @@ export default function DashboardPage() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const CustomTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
-    const { slots } = payload[0].payload;
+    if (active && payload && payload.length) {
+      const { slots } = payload[0].payload;
 
-    return (
-      <div className="bg-gradient-to-br from-[#1f1f2e] to-[#2c2c3e] border border-fuchsia-700 p-4 rounded-lg text-sm text-white shadow-2xl max-w-sm">
-        <p className="font-semibold text-fuchsia-400 mb-3 text-base">
-          📅 {label}
-        </p>
-        {slots && slots.length > 0 ? (
-          <ul className="space-y-2">
-            {slots.map(
-              (s: { start: string; end: string; group: string }, idx: number) => (
+      return (
+        <div className="bg-gradient-to-br from-[#1f1f2e] to-[#2c2c3e] border border-fuchsia-700 p-4 rounded-lg text-sm text-white shadow-2xl max-w-sm">
+          <p className="font-semibold text-fuchsia-400 mb-3 text-base">📅 {label}</p>
+          {slots && slots.length > 0 ? (
+            <ul className="space-y-2">
+              {slots.map((s: { start: string; end: string; group: string }, idx: number) => (
                 <li key={idx} className="flex items-center justify-between text-white">
                   <span className="font-mono text-sky-300">
                     {format(new Date(s.start), 'HH:mm')}–{format(new Date(s.end), 'HH:mm')}
@@ -149,20 +146,40 @@ export default function DashboardPage() {
                     {s.group}
                   </span>
                 </li>
-              )
-            )}
-          </ul>
-        ) : (
-          <p className="text-gray-400 italic">No meetings</p>
-        )}
-      </div>
-    );
-  }
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-400 italic">No meetings</p>
+          )}
+        </div>
+      );
+    }
 
-  return null;
-};
+    return null;
+  };
 
-
+  const handleLeaveGroup = async (groupId: string, groupName: string) => {
+    try {
+      const token = await user?.getIdToken();
+      const res = await fetch('/api/group/leave', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ groupId }),
+      });
+      const result = await res.json();
+      if (res.ok) {
+        toast.success(`Left group: ${groupName}`);
+        mutate(['/api/group/list', user]);
+      } else {
+        toast.error(result.error || 'Failed to leave group.');
+      }
+    } catch {
+      toast.error('Something went wrong.');
+    }
+  };
 
   if (loading) return <p className="p-8 text-white">Loading...</p>;
   if (!user) return null;
@@ -219,7 +236,6 @@ export default function DashboardPage() {
               <XAxis dataKey="date" stroke="#ffffff" />
               <YAxis allowDecimals={false} stroke="#ffffff" />
               <Tooltip content={<CustomTooltip />} />
-
 
               <Bar dataKey="count">
                 {meetingData.map((entry, index) => (
@@ -280,9 +296,20 @@ export default function DashboardPage() {
                 </p>
 
                 {/* CTA */}
-                <div className="flex justify-end">
+                <div className="flex justify-between">
                   <button
-                    onClick={() => router.push(`/groups/${group.id}/availability`)}
+                    onClick={() => handleLeaveGroup(group.id, group.name)}
+                    className="text-sm font-medium px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-md transition cursor-pointer"
+                  >
+                    Leave
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      router.push(
+                        `/groups/${group.id}/availability?name=${encodeURIComponent(group.name)}`
+                      )
+                    }
                     className="text-sm font-medium px-4 py-2 bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded-md transition cursor-pointer"
                   >
                     Open Group →
