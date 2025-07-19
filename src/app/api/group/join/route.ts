@@ -33,6 +33,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Group not found' }, { status: 404 });
     }
 
+    const existingMembership = await prisma.groupMember.findUnique({
+      where: {
+        userId_groupId: {
+          userId: dbUser.id,
+          groupId,
+        },
+      },
+    });
+
+    if (existingMembership) {
+      return NextResponse.json(
+        { error: 'You are already a member of this group' },
+        { status: 409 }
+      );
+    }
+
     await prisma.groupMember.upsert({
       where: {
         userId_groupId: {

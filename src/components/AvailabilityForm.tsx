@@ -1,3 +1,5 @@
+'use client';
+import { useEffect, useState } from 'react';
 import DatePicker from 'react-multi-date-picker';
 import TimePicker from 'react-multi-date-picker/plugins/analog_time_picker';
 
@@ -18,9 +20,25 @@ export default function AvailabilityForm({
   handleSubmit,
   status,
 }: Props) {
+  const [localError, setLocalError] = useState('');
+
+  useEffect(() => {
+    if (startDateTime && endDateTime && new Date(startDateTime) >= new Date(endDateTime)) {
+      setLocalError('Start time must be before end time.');
+    } else {
+      setLocalError('');
+    }
+  }, [startDateTime, endDateTime]);
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (localError) return;
+    handleSubmit(e);
+  };
+
   return (
     <form
-      onSubmit={handleSubmit}
+      onSubmit={handleFormSubmit}
       className="flex-1 space-y-10 bg-zinc-800 p-6 rounded-xl shadow-lg border border-zinc-700"
     >
       <div className="flex flex-col md:flex-row gap-6">
@@ -67,6 +85,7 @@ export default function AvailabilityForm({
           {status}
         </div>
       )}
+      {localError && <p className="text-red-500 text-sm mt-2 text-center">{localError}</p>}
     </form>
   );
 }

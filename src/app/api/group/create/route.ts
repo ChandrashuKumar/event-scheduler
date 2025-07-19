@@ -31,6 +31,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Group name is required' }, { status: 400 });
     }
 
+    const existingGroup = await prisma.group.findFirst({
+      where: {
+        name,
+        createdBy: firebaseUID,
+      },
+    });
+
+    if (existingGroup) {
+      return NextResponse.json(
+        { error: 'You already have a group with this name' },
+        { status: 409 }
+      );
+    }
+
     const group = await prisma.group.create({
       data: {
         name,

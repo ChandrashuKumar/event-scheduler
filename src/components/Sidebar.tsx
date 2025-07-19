@@ -29,32 +29,47 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const [groupCode, setGroupCode] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isJoinOpen, setIsJoinOpen] = useState(false);
+  const [groupError, setGroupError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleCreateGroup = async (e: React.FormEvent) => {
     e.preventDefault();
-    const token = await user?.getIdToken();
-    const res = await fetch('/api/group/create', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ name: groupName }),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      toast.success(`Created group: ${data.name}`);
-      setGroupName('');
-      setIsCreateOpen(false);
-      mutate(['/api/group/list', user]);
-    } else {
-      const error = await res.json();
-      alert(`Error: ${error.error}`);
+    setIsSubmitting(true);
+    setGroupError('');
+    try {
+      const token = await user?.getIdToken();
+      const res = await fetch('/api/group/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name: groupName }),
+      });
+      const result = await res.json();
+      if (res.ok) {
+        toast.success(`Created group: ${result.name}`);
+        setGroupName('');
+        setIsCreateOpen(false);
+        mutate(['/api/group/list', user]);
+      } else {
+        if (result.error === 'You already have a group with this name') {
+          setGroupError('You already created a group with this name.');
+        } else {
+          toast.error(result.error || 'Failed to create group.');
+        }
+      }
+    } catch {
+      toast.error('Something went wrong.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleJoinGroup = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    setGroupError('');
     try {
       const token = await user?.getIdToken();
       const res = await fetch('/api/group/join', {
@@ -65,15 +80,18 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         },
         body: JSON.stringify({ groupId: groupCode }),
       });
+      const result = await res.json();
       if (res.ok) {
-        const result = await res.json();
         toast.success(`Joined ${result.groupName} successfully!`);
         setGroupCode('');
         setIsJoinOpen(false);
         mutate(['/api/group/list', user]);
       } else {
-        const error = await res.json();
-        toast.error(error.error || 'Failed to join group');
+        if (result.error === 'You are already a member of this group') {
+          setGroupError('You are already a member of this group.');
+        } else {
+          toast.error(result.error || 'Failed to join group.');
+        }
       }
     } catch {
       toast.error('Something went wrong.');
@@ -152,10 +170,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
 
                 <button
                   type="submit"
-                  className="w-40 max-w-full cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-4 rounded transition-colors"
+                  disabled={isSubmitting}
+                  className={`w-40 max-w-full font-semibold py-2 px-4 rounded transition-colors ${
+                    isSubmitting
+                      ? 'bg-gray-500 cursor-not-allowed text-white'
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                  }`}
                 >
-                  Create
+                  {isSubmitting ? 'Creating...' : 'Create'}
                 </button>
+                {groupError && <p className="text-red-500 text-sm -mt-4">{groupError}</p>}
               </form>
             </div>
           </DialogContent>
@@ -188,10 +212,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 />
                 <button
                   type="submit"
-                  className="w-40 max-w-full cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-4 rounded transition-colors"
+                  disabled={isSubmitting}
+                  className={`w-40 max-w-full font-semibold py-2 px-4 rounded transition-colors ${
+                    isSubmitting
+                      ? 'bg-gray-500 cursor-not-allowed text-white'
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                  }`}
                 >
-                  Join
+                  {isSubmitting ? 'Joining...' : 'Join'}
                 </button>
+                {groupError && <p className="text-red-500 text-sm -mt-4">{groupError}</p>}
               </form>
             </div>
           </DialogContent>
