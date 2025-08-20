@@ -129,6 +129,29 @@ export default function DashboardPage() {
     return uniqueDates.size;
   }, [upcomingSlots]);
 
+  const ongoingMeetings = useMemo(() => {
+    const now = new Date();
+    
+    const ongoing: Array<{ start: string; end: string; group: string }> = [];
+    
+    Object.entries(meetings).forEach(([groupId, dateMap]) => {
+      const groupName = groups.find((g) => g.id === groupId)?.name || 'Unknown Group';
+      Object.values(dateMap)
+        .flat()
+        .forEach((slot) => {
+          const slotStart = new Date(slot.start);
+          const slotEnd = new Date(slot.end);
+          
+          // Check if meeting is currently ongoing
+          if (slotStart <= now && now <= slotEnd) {
+            ongoing.push({ ...slot, group: groupName });
+          }
+        });
+    });
+    
+    return ongoing;
+  }, [meetings, groups]);
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -224,6 +247,50 @@ export default function DashboardPage() {
       </div>
 
       <div className="border-t border-zinc-700 my-8" />
+
+      {/* Ongoing Meetings */}
+      {ongoingMeetings.length > 0 && (
+        <section className="bg-gradient-to-r from-emerald-900/30 to-emerald-800/30 border border-emerald-500/20 p-6 rounded-lg shadow-lg mb-8">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-emerald-400 rounded-full animate-pulse"></div>
+              <h2 className="text-xl font-semibold text-emerald-300">Live Now</h2>
+            </div>
+            <span className="text-sm text-emerald-200/80 bg-emerald-800/40 px-2 py-1 rounded-full">
+              {ongoingMeetings.length} ongoing
+            </span>
+          </div>
+          
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {ongoingMeetings.map((meeting, idx) => (
+              <div
+                key={`ongoing-${idx}`}
+                className="bg-gray-800/60 border border-emerald-500/20 rounded-lg p-4 hover:bg-gray-800/80 transition"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
+                  <span className="text-emerald-300 font-semibold text-sm">{meeting.group}</span>
+                </div>
+                
+                <div className="space-y-1 text-white">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-emerald-400">🟢 Started:</span>
+                    <span className="font-mono">
+                      {format(new Date(meeting.start), 'MMM dd, h:mm a')}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-red-400">🔴 Ends:</span>
+                    <span className="font-mono">
+                      {format(new Date(meeting.end), 'MMM dd, h:mm a')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Meeting Schedule */}
       <section className="bg-gray-800 p-6 rounded-lg shadow">
