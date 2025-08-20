@@ -1,3 +1,5 @@
+import { Loader } from '@/components/ui/loader';
+
 export default function ResolvedSlots({
   showResults,
   loadingResolved,
@@ -19,7 +21,9 @@ export default function ResolvedSlots({
       </div>
 
       {loadingResolved ? (
-        <p className="text-sm text-gray-400">⏳ Calculating...</p>
+        <div className="flex items-center justify-center py-8">
+          <Loader size="lg" variant="dots" text="⏳ Calculating conflicts..." />
+        </div>
       ) : Object.keys(resolved).length === 0 ? (
         <p className="text-sm text-gray-400">No overlapping availability found.</p>
       ) : (

@@ -7,13 +7,27 @@ type GroupMemberBasic = {
   email: string;
 };
 
-export default function GroupMembers({ members }: { members: GroupMemberBasic[] }) {
+export default function GroupMembers({ 
+  members, 
+  loading = false 
+}: { 
+  members: GroupMemberBasic[]
+  loading?: boolean 
+}) {
   return (
     <div className="flex-1 bg-zinc-800 p-6 rounded-xl shadow-lg">
       <h2 className="text-xl font-semibold text-white mb-1">Team Members</h2>
       <p className="text-sm text-gray-400 mb-4">Invite your team members to collaborate.</p>
 
-      {members.length > 0 ? (
+      {loading ? (
+        <Skeleton
+          count={3}
+          height={50}
+          baseColor="#313131"
+          highlightColor="#525252"
+          className="rounded-md"
+        />
+      ) : members.length > 0 ? (
         <ul className="space-y-4">
           {members.map((m) => (
             <li
@@ -33,13 +47,7 @@ export default function GroupMembers({ members }: { members: GroupMemberBasic[] 
           ))}
         </ul>
       ) : (
-        <Skeleton
-          count={3}
-          height={50}
-          baseColor="#313131"
-          highlightColor="#525252"
-          className="rounded-md"
-        />
+        <p className="text-sm text-gray-400">No team members found.</p>
       )}
     </div>
   );

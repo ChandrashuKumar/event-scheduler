@@ -1,6 +1,6 @@
 'use client';
 import useSWR, { mutate } from 'swr';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import Skeleton from 'react-loading-skeleton';
@@ -10,6 +10,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import { format } from 'date-fns';
 import { BarChart, XAxis, YAxis, Tooltip, Bar, Cell, ResponsiveContainer } from 'recharts';
 import { Group } from '@/generated/prisma/client';
+import { Loader } from '@/components/ui/loader';
 
 const MEETING_COLORS = ['#22c55e', '#3b82f6', '#eab308', '#ec4899', '#a78bfa'];
 type Slot = {
@@ -22,6 +23,7 @@ type MeetingsMap = Record<string, Slot[]>;
 export default function DashboardPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [leavingGroups, setLeavingGroups] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!user && !loading) {
@@ -159,6 +161,7 @@ export default function DashboardPage() {
   };
 
   const handleLeaveGroup = async (groupId: string, groupName: string) => {
+    setLeavingGroups(prev => new Set(prev).add(groupId));
     try {
       const token = await user?.getIdToken();
       const res = await fetch('/api/group/leave', {
@@ -178,10 +181,15 @@ export default function DashboardPage() {
       }
     } catch {
       toast.error('Something went wrong.');
+    } finally {
+      setLeavingGroups(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(groupId);
+        return newSet;
+      });
     }
   };
 
-  if (loading) return <p className="p-8 text-white">Loading...</p>;
   if (!user) return null;
 
   return (
@@ -299,8 +307,12 @@ export default function DashboardPage() {
                 <div className="flex justify-between">
                   <button
                     onClick={() => handleLeaveGroup(group.id, group.name)}
-                    className="text-sm font-medium px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-md transition cursor-pointer"
+                    disabled={leavingGroups.has(group.id)}
+                    className="text-sm font-medium px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-md transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
+                    {leavingGroups.has(group.id) && (
+                      <Loader size="sm" variant="spinner" className="border-white border-t-transparent" />
+                    )}
                     Leave
                   </button>
 

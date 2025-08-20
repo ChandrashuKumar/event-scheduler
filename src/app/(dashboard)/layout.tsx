@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Menu } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 import { useAuth } from '@/context/AuthContext';
+import { Loader } from '@/components/ui/loader';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -19,7 +20,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // While checking auth, avoid flash
   if (loading) {
-    return <div className="p-6 text-white">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+        <Loader size="xl" variant="dots" text="Loading..." />
+      </div>
+    );
   }
 
   // If unauthenticated and not loading, don't render layout

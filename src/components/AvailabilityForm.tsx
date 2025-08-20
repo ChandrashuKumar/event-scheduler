@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import DatePicker from 'react-multi-date-picker';
 import TimePicker from 'react-multi-date-picker/plugins/analog_time_picker';
+import { ButtonLoader } from '@/components/ui/loader';
 
 interface Props {
   startDateTime: string;
@@ -74,8 +75,10 @@ export default function AvailabilityForm({
       <div className="flex justify-center">
         <button
           type="submit"
-          className="bg-emerald-600 hover:bg-emerald-700 transition-colors text-white px-6 py-2 rounded font-semibold cursor-pointer"
+          disabled={status === 'Submitting...' || !!localError}
+          className="bg-emerald-600 hover:bg-emerald-700 transition-colors text-white px-6 py-2 rounded font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
+          {status === 'Submitting...' && <ButtonLoader />}
           ✅ Submit Availability
         </button>
       </div>

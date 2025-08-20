@@ -11,6 +11,7 @@ import AvailabilityForm from '@/components/AvailabilityForm';
 import GroupMembers from '@/components/GroupMembers';
 import AvailabilityList from '@/components/AvailabilityList';
 import ResolvedSlots from '@/components/ResolvedSlots';
+import { ButtonLoader} from '@/components/ui/loader';
 
 export default function GroupPage() {
   const { groupId } = useParams();
@@ -38,13 +39,14 @@ export default function GroupPage() {
     mutate: mutateEntries,
   } = useSWR(user ? `/api/availability/list?groupId=${groupId}` : null, fetcherWithToken);
 
-  const { data: members } = useSWR(
+  const { data: members, isLoading: loadingMembers } = useSWR(
     user ? `/api/group/members?groupId=${groupId}` : null,
     fetcherWithToken
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setStatus('Submitting...');
     try {
       const token = await user?.getIdToken();
       const res = await fetch('/api/availability/submit', {
@@ -59,6 +61,7 @@ export default function GroupPage() {
         setStartDateTime('');
         setEndDateTime('');
         mutateEntries(); // re-fetch availability list
+        setTimeout(() => setStatus(''), 3000); // Clear success message after 3 seconds
       } else {
         setStatus(`❌ Error: ${result.error}`);
       }
@@ -105,6 +108,7 @@ export default function GroupPage() {
     }
   };
 
+
   return (
     <div className="pt-1 sm:pt-2 px-4 sm:px-8 pb-10 sm:pb-18 space-y-10 text-white bg-gray-900 min-h-screen overflow-x-hidden">
       <ToastContainer position="top-right" autoClose={3000} theme="dark" />
@@ -129,7 +133,7 @@ export default function GroupPage() {
           handleSubmit={handleSubmit}
           status={status}
         />
-        <GroupMembers members={members || []} />
+        <GroupMembers members={members || []} loading={loadingMembers} />
       </div>
 
       <AvailabilityList
@@ -141,8 +145,10 @@ export default function GroupPage() {
       <div className="mt-6 text-center">
         <button
           onClick={fetchResolvedSlots}
-          className="bg-purple-700 hover:bg-purple-800 transition-colors cursor-pointer text-white px-5 py-2 rounded"
+          disabled={loadingResolved}
+          className="bg-purple-700 hover:bg-purple-800 transition-colors cursor-pointer text-white px-5 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
         >
+          {loadingResolved && <ButtonLoader />}
           🧠 View Common Time Slots
         </button>
       </div>

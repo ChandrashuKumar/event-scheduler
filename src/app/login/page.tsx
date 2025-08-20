@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Michroma } from 'next/font/google';
+import { Loader } from '@/components/ui/loader';
 
 const michroma = Michroma({ subsets: ['latin'], weight: '400' });
 
@@ -17,7 +18,11 @@ export default function LoginPage() {
     }
   }, [user, loading, router]);
 
-  if (loading || user) return null;
+  if (loading || user) return (
+    <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 text-white flex items-center justify-center">
+      <Loader size="xl" variant="dots" text="Loading..." />
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 text-white flex flex-col items-center justify-center relative px-4">
