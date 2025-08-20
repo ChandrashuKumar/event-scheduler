@@ -11,6 +11,7 @@ interface Props {
   setEndDateTime: (val: string) => void;
   handleSubmit: (e: React.FormEvent) => void;
   status: string;
+  existingEntries?: Array<{ startDateTime: string; endDateTime: string }>;
 }
 
 export default function AvailabilityForm({
@@ -20,16 +21,72 @@ export default function AvailabilityForm({
   setEndDateTime,
   handleSubmit,
   status,
+  existingEntries = [],
 }: Props) {
   const [localError, setLocalError] = useState('');
+  const [overlapInfo, setOverlapInfo] = useState('');
 
   useEffect(() => {
-    if (startDateTime && endDateTime && new Date(startDateTime) >= new Date(endDateTime)) {
+    if (!startDateTime || !endDateTime) {
+      setLocalError('');
+      setOverlapInfo('');
+      return;
+    }
+
+    const start = new Date(startDateTime);
+    const end = new Date(endDateTime);
+
+    // Check if start time is before end time
+    if (start >= end) {
       setLocalError('Start time must be before end time.');
+      return;
+    }
+
+    // Check for exact duplicates (same start AND end time, ignoring milliseconds)
+    const isDuplicate = existingEntries.some(entry => {
+      const existingStart = new Date(entry.startDateTime);
+      const existingEnd = new Date(entry.endDateTime);
+      
+      // Compare only date, hour, and minute (ignore seconds/milliseconds)
+      const isSameStart = 
+        start.getFullYear() === existingStart.getFullYear() &&
+        start.getMonth() === existingStart.getMonth() &&
+        start.getDate() === existingStart.getDate() &&
+        start.getHours() === existingStart.getHours() &&
+        start.getMinutes() === existingStart.getMinutes();
+        
+      const isSameEnd = 
+        end.getFullYear() === existingEnd.getFullYear() &&
+        end.getMonth() === existingEnd.getMonth() &&
+        end.getDate() === existingEnd.getDate() &&
+        end.getHours() === existingEnd.getHours() &&
+        end.getMinutes() === existingEnd.getMinutes();
+        
+      return isSameStart && isSameEnd;
+    });
+
+    if (isDuplicate) {
+      setLocalError('You already have availability for this exact time period.');
+      setOverlapInfo('');
     } else {
       setLocalError('');
+      
+      // Check for overlaps (not duplicates) to show helpful info
+      const hasOverlap = existingEntries.some(entry => {
+        const existingStart = new Date(entry.startDateTime);
+        const existingEnd = new Date(entry.endDateTime);
+        
+        // Check if times overlap (but not exact duplicates)
+        return (start < existingEnd && end > existingStart);
+      });
+      
+      if (hasOverlap) {
+        setOverlapInfo('This overlaps with existing availability - that\'s totally fine!');
+      } else {
+        setOverlapInfo('');
+      }
     }
-  }, [startDateTime, endDateTime]);
+  }, [startDateTime, endDateTime, existingEntries]);
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,11 +141,26 @@ export default function AvailabilityForm({
       </div>
 
       {status && (
-        <div className="text-sm mt-2 text-center bg-zinc-700 text-white py-2 px-3 rounded">
+        <div className="text-sm mt-4 text-center bg-zinc-700 text-white py-2 px-3 rounded">
           {status}
         </div>
       )}
-      {localError && <p className="text-red-500 text-sm mt-2 text-center">{localError}</p>}
+      {localError && (
+        <div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-center">
+          <p className="text-red-400 text-sm font-medium flex items-center justify-center gap-2">
+            <span className="text-red-500">⚠️</span>
+            {localError}
+          </p>
+        </div>
+      )}
+      {overlapInfo && !localError && (
+        <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg text-center">
+          <p className="text-blue-400 text-sm font-medium flex items-center justify-center gap-2">
+            <span className="text-blue-500">ℹ️</span>
+            {overlapInfo}
+          </p>
+        </div>
+      )}
     </form>
   );
 }

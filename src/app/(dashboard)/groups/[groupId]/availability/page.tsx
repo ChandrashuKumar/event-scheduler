@@ -140,6 +140,7 @@ export default function GroupPage() {
           setEndDateTime={setEndDateTime}
           handleSubmit={handleSubmit}
           status={status}
+          existingEntries={entries || []}
         />
         <GroupMembers members={members || []} loading={loadingMembers} />
       </div>
