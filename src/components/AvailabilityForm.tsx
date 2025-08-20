@@ -97,33 +97,33 @@ export default function AvailabilityForm({
   return (
     <form
       onSubmit={handleFormSubmit}
-      className="flex-1 space-y-10 bg-zinc-800 p-6 rounded-xl shadow-lg border border-zinc-700"
+      className="flex-1 space-y-10 bg-pink-100/40 dark:bg-card p-6 rounded-xl shadow-lg border border-border"
     >
       <div className="flex flex-col md:flex-row gap-6">
         <div className="flex-1">
-          <label className="block font-semibold text-white mb-4">Start Date & Time</label>
+          <label className="block font-semibold text-foreground mb-4">Start Date & Time</label>
           <DatePicker
             value={startDateTime}
             onChange={(val) => setStartDateTime(val?.toDate()?.toISOString() || '')}
             format="YYYY/MM/DD HH:mm"
             plugins={[<TimePicker key="start-time" hideSeconds />]}
             containerClassName="w-full"
-            className="bg-dark text-black"
-            inputClass="w-full px-4 py-2 bg-zinc-900 text-white placeholder-gray-400 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-600 transition"
+            className="bg-background dark:bg-input text-black"
+            inputClass="w-full px-4 py-2 bg-background dark:bg-input text-foreground placeholder-muted-foreground border border-input dark:border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 transition"
             placeholder="Select"
           />
         </div>
 
         <div className="flex-1">
-          <label className="block font-semibold text-white mb-4">End Date & Time</label>
+          <label className="block font-semibold text-foreground mb-4">End Date & Time</label>
           <DatePicker
             value={endDateTime}
             onChange={(val) => setEndDateTime(val?.toDate()?.toISOString() || '')}
             format="YYYY/MM/DD HH:mm"
             plugins={[<TimePicker key="end-time" hideSeconds />]}
-            className="bg-dark text-black"
+            className="bg-background dark:bg-input text-black"
             containerClassName="w-full"
-            inputClass="w-full px-4 py-2 bg-zinc-900 text-white placeholder-gray-400 border border-zinc-700 rounded-md focus:outline-none focus:ring-2 focus:ring-emerald-600 transition"
+            inputClass="w-full px-4 py-2 bg-background dark:bg-input text-foreground placeholder-muted-foreground border border-input dark:border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400 transition"
             placeholder="Select"
           />
         </div>
@@ -133,7 +133,7 @@ export default function AvailabilityForm({
         <button
           type="submit"
           disabled={status === 'Submitting...' || !!localError}
-          className="bg-emerald-600 hover:bg-emerald-700 transition-colors text-white px-6 py-2 rounded font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          className="bg-pink-500 hover:bg-pink-600 transition-colors text-white px-6 py-2 rounded-lg font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
           {status === 'Submitting...' && <ButtonLoader />}
           ✅ Submit Availability
@@ -141,7 +141,7 @@ export default function AvailabilityForm({
       </div>
 
       {status && (
-        <div className="text-sm mt-4 text-center bg-zinc-700 text-white py-2 px-3 rounded">
+        <div className="text-sm mt-4 text-center bg-blue-100/50 dark:bg-muted text-foreground py-2 px-3 rounded-lg">
           {status}
         </div>
       )}

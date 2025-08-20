@@ -118,16 +118,16 @@ export default function GroupPage() {
 
 
   return (
-    <div className="pt-1 sm:pt-2 px-4 sm:px-8 pb-10 sm:pb-18 space-y-10 text-white bg-gray-900 min-h-screen overflow-x-hidden">
-      <ToastContainer position="top-right" autoClose={3000} theme="dark" />
-      <h1 className="text-2xl font-bold text-center">Submit Availability</h1>
+    <div className="pt-1 sm:pt-2 px-4 sm:px-8 pb-10 sm:pb-18 space-y-10 text-foreground bg-background min-h-screen overflow-x-hidden">
+      <ToastContainer position="top-right" autoClose={3000} theme="light" />
+      <h1 className="text-2xl font-bold text-center text-foreground">Submit Availability</h1>
       {groupName && (
         <div className="text-center mb-10 -mt-4">
           <div className="inline-block">
-            <h2 className="text-2xl sm:text-3xl font-semibold text-indigo-300 tracking-wide">
+            <h2 className="text-2xl sm:text-3xl font-semibold text-pink-600 dark:text-pink-400 tracking-wide">
               {groupName}
             </h2>
-            <div className="h-1 bg-indigo-300 mt-1 rounded-full" />
+            <div className="h-1 bg-pink-600 dark:bg-pink-400 mt-1 rounded-full" />
           </div>
         </div>
       )}
@@ -156,10 +156,10 @@ export default function GroupPage() {
         <button
           onClick={fetchResolvedSlots}
           disabled={loadingResolved}
-          className="bg-purple-700 hover:bg-purple-800 transition-colors cursor-pointer text-white px-5 py-2 rounded disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
+          className="bg-pink-500 hover:bg-pink-600 transition-colors cursor-pointer text-white px-5 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
         >
           {loadingResolved && <ButtonLoader />}
-          🧠 View Common Time Slots
+          🧠 Resolve Common Time Slots
         </button>
       </div>
 

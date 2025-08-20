@@ -25,8 +25,8 @@ export default function AvailabilityList({ entries, loading, handleDelete, delet
 
   return (
     <div className="max-w-xl mx-auto mt-10">
-      <div className="bg-zinc-800 p-6 rounded-lg shadow border border-zinc-700">
-        <h2 className="text-lg font-semibold mb-3 text-white">Your Submitted Availability</h2>
+      <div className="bg-pink-100/40 dark:bg-card p-6 rounded-xl shadow-lg border border-border">
+        <h2 className="text-lg font-semibold mb-3 text-foreground">Your Submitted Availability</h2>
 
         {loading ? (
           <Skeleton
@@ -40,23 +40,23 @@ export default function AvailabilityList({ entries, loading, handleDelete, delet
           <div className="space-y-6">
             {sorted.map(([date, slots]) => (
               <div key={date}>
-                <h3 className="text-md font-semibold text-indigo-300 mb-2">
+                <h3 className="text-md font-semibold text-pink-600 dark:text-pink-400 mb-2">
                   {format(new Date(date), 'EEEE, MMMM do yyyy')}
                 </h3>
                 <ul className="space-y-2">
                   {slots.map((slot) => (
                     <li
                       key={slot.id}
-                      className="flex justify-between items-center bg-zinc-700/40 px-4 py-2 rounded-md"
+                      className="flex justify-between items-center bg-blue-100/50 dark:bg-muted/50 px-4 py-2 rounded-lg"
                     >
-                      <span className="text-sm text-white">
+                      <span className="text-sm text-foreground">
                         {format(new Date(slot.startDateTime), 'hh:mm a')} –{' '}
                         {format(new Date(slot.endDateTime), 'hh:mm a')}
                       </span>
                       <button
                         onClick={() => handleDelete(slot.id)}
                         disabled={deletingAvailability.has(slot.id)}
-                        className="text-sm cursor-pointer bg-[#ff1450] hover:bg-[#e20b42] text-white px-4 py-2 rounded font-medium transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        className="text-sm cursor-pointer bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                       >
                         {deletingAvailability.has(slot.id) && <ButtonLoader />}
                         Remove
@@ -68,7 +68,7 @@ export default function AvailabilityList({ entries, loading, handleDelete, delet
             ))}
           </div>
         ) : (
-          <p className="text-sm text-gray-400">No availability submitted yet.</p>
+          <p className="text-sm text-muted-foreground">No availability submitted yet.</p>
         )}
       </div>
     </div>
