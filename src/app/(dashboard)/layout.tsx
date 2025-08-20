@@ -21,7 +21,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // While checking auth, avoid flash
   if (loading) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader size="xl" variant="dots" text="Loading..." />
       </div>
     );
@@ -33,7 +33,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="flex h-screen bg-base-100 overflow-hidden relative">
+    <div className="flex h-screen bg-background overflow-hidden relative">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {sidebarOpen && (
@@ -44,16 +44,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       )}
 
       <div className="flex-1 flex flex-col w-full overflow-hidden">
-        <header className="w-full px-4 py-3 border-b border-gray-700 flex items-center justify-between bg-base-200 text-white">
+        <header className="w-full px-4 py-3 border-b border-border flex items-center justify-between bg-card">
           <button
             onClick={() => setSidebarOpen(true)}
-            className="btn btn-square btn-ghost md:hidden"
+            className="p-2 hover:bg-muted rounded-lg transition-colors md:hidden"
           >
-            <Menu className="w-6 h-6" />
+            <Menu className="w-6 h-6 text-foreground" />
           </button>
         </header>
 
-        <main className="flex-1 overflow-y-auto max-w-full bg-zinc-950 text-white">{children}</main>
+        <main className="flex-1 overflow-y-auto max-w-full bg-background text-foreground">{children}</main>
       </div>
     </div>
   );

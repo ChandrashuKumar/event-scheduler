@@ -1,29 +1,37 @@
 'use client';
-import useSWR, { mutate } from 'swr';
-import { useEffect, useMemo, useState } from 'react';
+
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
-import Skeleton from 'react-loading-skeleton';
-import 'react-loading-skeleton/dist/skeleton.css';
-import { toast, ToastContainer } from 'react-toastify';
+import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { format } from 'date-fns';
-import { BarChart, XAxis, YAxis, Tooltip, Bar, Cell, ResponsiveContainer } from 'recharts';
-import { Group } from '@/generated/prisma/client';
-import { Loader } from '@/components/ui/loader';
 
-const MEETING_COLORS = ['#22c55e', '#3b82f6', '#eab308', '#ec4899', '#a78bfa'];
-type Slot = {
-  start: string;
-  end: string;
-};
+import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
+import { useDashboardData } from '@/hooks/useDashboardData';
 
-type MeetingsMap = Record<string, Slot[]>;
+import DashboardHeader from '@/components/dashboard/DashboardHeader';
+import StatsOverview from '@/components/dashboard/StatsOverview';
+import OngoingMeetings from '@/components/dashboard/OngoingMeetings';
+import WeeklyChart from '@/components/dashboard/WeeklyChart';
+import GroupsSection from '@/components/dashboard/GroupsSection';
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
+  const { theme } = useTheme();
   const router = useRouter();
-  const [leavingGroups, setLeavingGroups] = useState<Set<string>>(new Set());
+  
+  // Use custom hook for all dashboard data
+  const {
+    groups,
+    groupsLoading,
+    meetingData,
+    upcomingSlots,
+    upcomingDaysWithMeetings,
+    ongoingMeetings,
+    leavingGroups,
+    handleLeaveGroup,
+    meetingLoading
+  } = useDashboardData();
 
   useEffect(() => {
     if (!user && !loading) {
@@ -31,377 +39,35 @@ export default function DashboardPage() {
     }
   }, [user, loading, router]);
 
-  const fetcherWithToken = async (url: string, token: string | undefined) => {
-    const res = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    if (!res.ok) throw new Error('Failed to fetch');
-    return res.json();
-  };
-
-  const { data: groupList = [], isLoading: groupsLoading } = useSWR(
-    user ? ['/api/group/list', user] : null,
-    async ([url, user]) => {
-      const token = await user.getIdToken();
-      return fetcherWithToken(url, token);
-    }
-  );
-
-  const groups: Group[] = groupList;
-
-  const { data: meetings = {}, isLoading: meetingLoading } = useSWR<Record<string, MeetingsMap>>(
-    groups.length ? ['/api/availability/resolve', groups] : null,
-    async () => {
-      const token = await user?.getIdToken();
-      const res = await fetch('/api/availability/resolve', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ groupIds: groups.map((g) => g.id) }),
-      });
-      if (!res.ok) throw new Error('Failed to fetch multi-group meetings');
-      return res.json();
-    }
-  );
-
-  const greeting = useMemo(() => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 18) return 'Good afternoon';
-    return 'Good evening';
-  }, []);
-
-  const meetingData = useMemo(() => {
-    const now = new Date();
-    const today = new Date();
-    const dayOfWeek = today.getDay();
-
-    const remainingDays = Array.from({ length: 7 - dayOfWeek }, (_, i) => {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      return date;
-    });
-
-    // Build merged map from all groups
-    const slotMap: Record<string, { start: string; end: string; group: string }[]> = {};
-
-    Object.entries(meetings).forEach(([groupId, dateMap]) => {
-      const groupName = groups.find((g) => g.id === groupId)?.name || 'Unknown Group';
-      Object.values(dateMap)
-        .flat()
-        .forEach((slot) => {
-          if (new Date(slot.start) <= now) return;
-          const dateKey = format(new Date(slot.start), 'yyyy-MM-dd');
-          if (!slotMap[dateKey]) slotMap[dateKey] = [];
-          slotMap[dateKey].push({ ...slot, group: groupName });
-        });
-    });
-
-    return remainingDays.map((date) => {
-      const key = format(date, 'yyyy-MM-dd');
-      const slots = slotMap[key] || [];
-      return {
-        date: format(date, 'EEE dd MMM'),
-        count: slots.length,
-        slots,
-      };
-    });
-  }, [meetings, groups]);
-
-  const upcomingSlots = useMemo(() => {
-    const now = new Date();
-
-    return Object.values(meetings).flatMap((groupSlots) =>
-      Object.values(groupSlots)
-        .flat()
-        .filter((slot) => new Date(slot.start) > now)
-    );
-  }, [meetings]);
-
-  const upcomingDaysWithMeetings = useMemo(() => {
-    const uniqueDates = new Set(
-      upcomingSlots.map((slot) => format(new Date(slot.start), 'yyyy-MM-dd'))
-    );
-    return uniqueDates.size;
-  }, [upcomingSlots]);
-
-  const ongoingMeetings = useMemo(() => {
-    const now = new Date();
-    
-    const ongoing: Array<{ start: string; end: string; group: string }> = [];
-    
-    Object.entries(meetings).forEach(([groupId, dateMap]) => {
-      const groupName = groups.find((g) => g.id === groupId)?.name || 'Unknown Group';
-      Object.values(dateMap)
-        .flat()
-        .forEach((slot) => {
-          const slotStart = new Date(slot.start);
-          const slotEnd = new Date(slot.end);
-          
-          // Check if meeting is currently ongoing
-          if (slotStart <= now && now <= slotEnd) {
-            ongoing.push({ ...slot, group: groupName });
-          }
-        });
-    });
-    
-    return ongoing;
-  }, [meetings, groups]);
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      const { slots } = payload[0].payload;
-
-      return (
-        <div className="bg-gradient-to-br from-[#1f1f2e] to-[#2c2c3e] border border-fuchsia-700 p-4 rounded-lg text-sm text-white shadow-2xl max-w-sm">
-          <p className="font-semibold text-fuchsia-400 mb-3 text-base">📅 {label}</p>
-          {slots && slots.length > 0 ? (
-            <ul className="space-y-2">
-              {slots.map((s: { start: string; end: string; group: string }, idx: number) => (
-                <li key={idx} className="flex items-center justify-between text-white">
-                  <span className="font-mono text-sky-300">
-                    {format(new Date(s.start), 'HH:mm')}–{format(new Date(s.end), 'HH:mm')}
-                  </span>
-                  <span className="ml-4 px-2 py-0.5 text-xs rounded bg-fuchsia-700/30 text-fuchsia-300 font-medium">
-                    {s.group}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-400 italic">No meetings</p>
-          )}
-        </div>
-      );
-    }
-
-    return null;
-  };
-
-  const handleLeaveGroup = async (groupId: string, groupName: string) => {
-    setLeavingGroups(prev => new Set(prev).add(groupId));
-    try {
-      const token = await user?.getIdToken();
-      const res = await fetch('/api/group/leave', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ groupId }),
-      });
-      const result = await res.json();
-      if (res.ok) {
-        toast.success(`Left group: ${groupName}`);
-        mutate(['/api/group/list', user]);
-      } else {
-        toast.error(result.error || 'Failed to leave group.');
-      }
-    } catch {
-      toast.error('Something went wrong.');
-    } finally {
-      setLeavingGroups(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(groupId);
-        return newSet;
-      });
-    }
-  };
-
   if (!user) return null;
 
   return (
-    <div className="p-4 sm:p-6 space-y-8 text-white bg-gray-900 min-h-screen overflow-x-hidden">
-      <ToastContainer position="top-right" autoClose={3000} theme="dark" />
+    <div className="min-h-screen bg-background text-foreground">
+      <ToastContainer position="top-right" autoClose={3000} theme={theme} />
 
-      {/* Greeting */}
-      <header className="space-y-1">
-        <h1 className="text-3xl sm:text-4xl font-bold">
-          {greeting}, {user.displayName || user.email}!
-        </h1>
-        <p className="text-gray-400 text-sm sm:text-base">
-          {format(new Date(), 'EEEE do MMM yyyy')}
-        </p>
-      </header>
+      <DashboardHeader />
 
-      <div className="border-t border-zinc-700 my-8" />
+      <main className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
+        <StatsOverview
+          totalGroups={groups.length}
+          upcomingDaysWithMeetings={upcomingDaysWithMeetings}
+          upcomingSlots={upcomingSlots.length}
+        />
 
-      <div className="flex flex-wrap justify-between gap-4 text-xs sm:text-base">
-        <div className="flex-1 min-w-[100px] bg-gray-800 p-4 rounded shadow text-center">
-          <p className="text-gray-400 h-10">Total Groups</p>
-          <p className="text-2xl font-bold text-indigo-300">{groups.length}</p>
-        </div>
-        <div className="flex-1 min-w-[100px] bg-gray-800 p-4 rounded shadow text-center">
-          <p className="text-gray-400 h-10">Days with Meetings</p>
-          <p className="text-2xl font-bold text-lime-300">{upcomingDaysWithMeetings}</p>
-        </div>
-        <div className="flex-1 min-w-[100px] bg-gray-800 p-4 rounded shadow text-center">
-          <p className="text-gray-400 h-10">Total Meeting Slots</p>
-          <p className="text-2xl font-bold text-pink-300">{upcomingSlots.length}</p>
-        </div>
-      </div>
+        <OngoingMeetings meetings={ongoingMeetings} />
 
-      <div className="border-t border-zinc-700 my-8" />
+        <WeeklyChart
+          data={meetingData}
+          isLoading={meetingLoading}
+        />
 
-      {/* Ongoing Meetings */}
-      {ongoingMeetings.length > 0 && (
-        <section className="bg-gradient-to-r from-emerald-900/30 to-emerald-800/30 border border-emerald-500/20 p-6 rounded-lg shadow-lg mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-emerald-400 rounded-full animate-pulse"></div>
-              <h2 className="text-xl font-semibold text-emerald-300">Live Now</h2>
-            </div>
-            <span className="text-sm text-emerald-200/80 bg-emerald-800/40 px-2 py-1 rounded-full">
-              {ongoingMeetings.length} ongoing
-            </span>
-          </div>
-          
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {ongoingMeetings.map((meeting, idx) => (
-              <div
-                key={`ongoing-${idx}`}
-                className="bg-gray-800/60 border border-emerald-500/20 rounded-lg p-4 hover:bg-gray-800/80 transition"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 bg-emerald-400 rounded-full"></div>
-                  <span className="text-emerald-300 font-semibold text-sm">{meeting.group}</span>
-                </div>
-                
-                <div className="space-y-1 text-white">
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="text-emerald-400">🟢 Started:</span>
-                    <span className="font-mono">
-                      {format(new Date(meeting.start), 'MMM dd, h:mm a')}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="text-red-400">🔴 Ends:</span>
-                    <span className="font-mono">
-                      {format(new Date(meeting.end), 'MMM dd, h:mm a')}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Meeting Schedule */}
-      <section className="bg-gray-800 p-6 rounded-lg shadow">
-        <h2 className="text-xl font-semibold mb-4">Upcoming Meeting Slots This Week</h2>
-        {meetingLoading ? (
-          <Skeleton
-            height={300}
-            width="100%"
-            baseColor="#1e2939"
-            highlightColor="#374151"
-            borderRadius="0.5rem"
-          />
-        ) : meetingData.length === 0 ? (
-          <p className="text-gray-400">No common time slots found for this week.</p>
-        ) : (
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={meetingData}>
-              <XAxis dataKey="date" stroke="#ffffff" />
-              <YAxis allowDecimals={false} stroke="#ffffff" />
-              <Tooltip content={<CustomTooltip />} />
-
-              <Bar dataKey="count">
-                {meetingData.map((entry, index) => (
-                  <Cell
-                    key={`bar-${entry.date}`}
-                    fill={MEETING_COLORS[index % MEETING_COLORS.length]}
-                  />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        )}
-      </section>
-
-      <div className="border-t border-zinc-700 my-8" />
-
-      {/* Group List */}
-      <section>
-        <h2 className="text-2xl font-semibold text-white mb-4">Your Groups</h2>
-        {groupsLoading ? (
-          <Skeleton count={3} height={60} baseColor="#1e2939" highlightColor="#374151" />
-        ) : groups.length === 0 ? (
-          <p className="text-gray-400">You’re not in any groups yet.</p>
-        ) : (
-          <div className="grid sm:grid-cols-2 gap-6">
-            {groups.map((group) => (
-              <div
-                key={group.id}
-                className="relative group bg-gradient-to-br from-[#2a1a3f] to-[#1a1029] border border-[#3a2e4c] rounded-xl p-5 shadow-lg transition duration-300 hover:shadow-2xl"
-              >
-                {/* Top Row */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-fuchsia-600 text-white text-sm font-semibold rounded-full w-9 h-9 flex items-center justify-center shadow">
-                      {group.name.charAt(0).toUpperCase()}
-                    </div>
-                    <h3 className="text-lg font-semibold text-white truncate max-w-[200px]">
-                      {group.name}
-                    </h3>
-                  </div>
-
-                  {/* Copy Button */}
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(group.id);
-                      toast.success('Group ID copied!');
-                    }}
-                    className="text-sm font-medium text-slate-200 hover:text-white px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded-md transition cursor-pointer"
-                    title="Copy Group ID"
-                  >
-                    📋 Copy ID
-                  </button>
-                </div>
-
-                {/* Description */}
-                <p className="text-zinc-400 text-sm mb-4">
-                  Collaborate and resolve availability with your team.
-                </p>
-
-                {/* CTA */}
-                <div className="flex justify-between">
-                  <button
-                    onClick={() => handleLeaveGroup(group.id, group.name)}
-                    disabled={leavingGroups.has(group.id)}
-                    className="text-sm font-medium px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-md transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  >
-                    {leavingGroups.has(group.id) && (
-                      <Loader size="sm" variant="spinner" className="border-white border-t-transparent" />
-                    )}
-                    Leave
-                  </button>
-
-                  <button
-                    onClick={() =>
-                      router.push(
-                        `/groups/${group.id}/availability?name=${encodeURIComponent(group.name)}`
-                      )
-                    }
-                    className="text-sm font-medium px-4 py-2 bg-fuchsia-600 hover:bg-fuchsia-500 text-white rounded-md transition cursor-pointer"
-                  >
-                    Open Group →
-                  </button>
-                </div>
-
-                {/* Subtle hover ring */}
-                <div className="absolute inset-0 rounded-xl ring-1 ring-fuchsia-500/10 group-hover:ring-fuchsia-500/40 transition pointer-events-none" />
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+        <GroupsSection
+          groups={groups}
+          groupsLoading={groupsLoading}
+          leavingGroups={leavingGroups}
+          onLeaveGroup={handleLeaveGroup}
+        />
+      </main>
     </div>
   );
 }
