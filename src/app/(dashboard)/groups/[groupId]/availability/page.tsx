@@ -25,6 +25,7 @@ export default function GroupPage() {
   const [resolved, setResolved] = useState<Record<string, { start: string; end: string }[]>>({});
   const [loadingResolved, setLoadingResolved] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [deletingAvailability, setDeletingAvailability] = useState<Set<string>>(new Set());
 
   const fetcherWithToken = async (url: string) => {
     const token = await user?.getIdToken();
@@ -71,6 +72,7 @@ export default function GroupPage() {
   };
 
   const handleDelete = async (availabilityId: string) => {
+    setDeletingAvailability(prev => new Set(prev).add(availabilityId));
     try {
       const token = await user?.getIdToken();
       const res = await fetch('/api/availability/remove', {
@@ -87,6 +89,12 @@ export default function GroupPage() {
       }
     } catch {
       toast.error('Server error');
+    } finally {
+      setDeletingAvailability(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(availabilityId);
+        return newSet;
+      });
     }
   };
 
@@ -140,6 +148,7 @@ export default function GroupPage() {
         entries={entries || []}
         loading={loadingEntries}
         handleDelete={handleDelete}
+        deletingAvailability={deletingAvailability}
       />
 
       <div className="mt-6 text-center">

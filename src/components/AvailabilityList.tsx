@@ -1,14 +1,16 @@
 import { Availability } from '@/generated/prisma';
 import Skeleton from 'react-loading-skeleton';
 import { format } from 'date-fns';
+import { ButtonLoader } from '@/components/ui/loader';
 
 interface Props {
   entries: Availability[];
   loading: boolean;
   handleDelete: (id: string) => void;
+  deletingAvailability?: Set<string>;
 }
 
-export default function AvailabilityList({ entries, loading, handleDelete }: Props) {
+export default function AvailabilityList({ entries, loading, handleDelete, deletingAvailability = new Set() }: Props) {
   const groupedByDate = entries.reduce(
     (acc, entry) => {
       const date = format(new Date(entry.startDateTime), 'yyyy-MM-dd');
@@ -53,8 +55,10 @@ export default function AvailabilityList({ entries, loading, handleDelete }: Pro
                       </span>
                       <button
                         onClick={() => handleDelete(slot.id)}
-                        className="text-sm cursor-pointer bg-[#ff1450] hover:bg-[#e20b42] text-white px-4 py-2 rounded font-medium transition"
+                        disabled={deletingAvailability.has(slot.id)}
+                        className="text-sm cursor-pointer bg-[#ff1450] hover:bg-[#e20b42] text-white px-4 py-2 rounded font-medium transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                       >
+                        {deletingAvailability.has(slot.id) && <ButtonLoader />}
                         Remove
                       </button>
                     </li>

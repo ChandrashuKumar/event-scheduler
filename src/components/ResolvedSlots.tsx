@@ -22,7 +22,7 @@ export default function ResolvedSlots({
 
       {loadingResolved ? (
         <div className="flex items-center justify-center py-8">
-          <Loader size="lg" variant="dots" text="⏳ Calculating conflicts..." />
+          <Loader size="lg" variant="spinner" text="⏳ Calculating conflicts..." />
         </div>
       ) : Object.keys(resolved).length === 0 ? (
         <p className="text-sm text-gray-400">No overlapping availability found.</p>
