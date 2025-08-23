@@ -32,9 +32,9 @@ export default function AvailabilityList({ entries, loading, handleDelete, delet
           <Skeleton
             count={4}
             height={20}
-            baseColor="#313131"
-            highlightColor="#525252"
-            className="mb-1"
+            baseColor="#e2e8f0"
+            highlightColor="#f1f5f9"
+            className="mb-1 dark:[&>span]:!bg-[#313131] dark:[&>span]:after:!bg-[#525252]"
           />
         ) : sorted.length > 0 ? (
           <div className="space-y-6">

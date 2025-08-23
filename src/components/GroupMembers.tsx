@@ -23,9 +23,9 @@ export default function GroupMembers({
         <Skeleton
           count={3}
           height={50}
-          baseColor="#313131"
-          highlightColor="#525252"
-          className="rounded-md"
+          baseColor="#e2e8f0"
+          highlightColor="#f1f5f9"
+          className="rounded-md dark:[&>span]:!bg-[#313131] dark:[&>span]:after:!bg-[#525252]"
         />
       ) : members.length > 0 ? (
         <ul className="space-y-4">
