@@ -50,7 +50,7 @@ export default function DashboardPage() {
           totalGroups={groups.length}
         />
 
-        <OngoingMeetings meetings={ongoingMeetings} />
+        <OngoingMeetings meetings={ongoingMeetings} isLoading={meetingLoading} />
 
         <WeeklyChart
           data={meetingData}
