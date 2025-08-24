@@ -5,7 +5,7 @@ import { ReactNode } from 'react';
 interface StatsCardProps {
   icon: ReactNode;
   iconBgColor: string;
-  badge: string;
+  badge: string | ReactNode;
   value: number;
   label: string;
   className?: string;
@@ -25,9 +25,13 @@ const StatsCard = ({
         <div className={`w-10 h-10 ${iconBgColor} rounded-lg flex items-center justify-center`}>
           {icon}
         </div>
-        <span className="text-sm font-semibold text-purple-700 dark:bg-muted dark:text-foreground dark:px-2 dark:py-1 dark:rounded-full">
-          {badge}
-        </span>
+        {typeof badge === 'string' ? (
+          <span className="text-sm font-semibold  bg-blue-100 text-purple-700 dark:bg-muted dark:text-foreground px-2 py-1 rounded-full">
+            {badge}
+          </span>
+        ) : (
+          badge
+        )}
       </div>
       <div className="space-y-1">
         <p className="text-xl sm:text-2xl font-bold text-foreground">{value}</p>

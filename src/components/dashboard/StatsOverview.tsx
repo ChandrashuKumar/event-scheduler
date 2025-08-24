@@ -1,18 +1,23 @@
 'use client';
 
+import { useState } from 'react';
 import { StatsCard } from './StatsCard';
+import WeekSelector, { WeekOption } from './WeekSelector';
+import { useDashboardData } from '@/hooks/useDashboardData';
 
 interface StatsOverviewProps {
   totalGroups: number;
-  upcomingDaysWithMeetings: number;
-  upcomingSlots: number;
 }
 
 const StatsOverview = ({ 
-  totalGroups, 
-  upcomingDaysWithMeetings, 
-  upcomingSlots 
+  totalGroups 
 }: StatsOverviewProps) => {
+  const [daysWeekOption, setDaysWeekOption] = useState<WeekOption>('this-week');
+  const [slotsWeekOption, setSlotsWeekOption] = useState<WeekOption>('this-week');
+  const { getWeekDaysWithMeetings, getWeekSlots } = useDashboardData();
+  
+  const upcomingDaysWithMeetings = getWeekDaysWithMeetings(daysWeekOption);
+  const upcomingSlots = getWeekSlots(slotsWeekOption).length;
   return (
     <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
       <StatsCard
@@ -34,9 +39,14 @@ const StatsOverview = ({
           </svg>
         }
         iconBgColor="bg-emerald-500/10"
-        badge="This Week"
+        badge={
+          <WeekSelector 
+            value={daysWeekOption} 
+            onValueChange={setDaysWeekOption} 
+          />
+        }
         value={upcomingDaysWithMeetings}
-        label="Days with Meetings"
+        label="Upcoming Days with Meetings"
       />
 
       <StatsCard
@@ -46,7 +56,12 @@ const StatsOverview = ({
           </svg>
         }
         iconBgColor="bg-purple-500/10"
-        badge="Upcoming"
+        badge={
+          <WeekSelector 
+            value={slotsWeekOption} 
+            onValueChange={setSlotsWeekOption} 
+          />
+        }
         value={upcomingSlots}
         label="Meeting Slots"
         className="sm:col-span-2 lg:col-span-1"

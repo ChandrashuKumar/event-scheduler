@@ -25,8 +25,6 @@ export default function DashboardPage() {
     groups,
     groupsLoading,
     meetingData,
-    upcomingSlots,
-    upcomingDaysWithMeetings,
     ongoingMeetings,
     leavingGroups,
     handleLeaveGroup,
@@ -50,8 +48,6 @@ export default function DashboardPage() {
       <main className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
         <StatsOverview
           totalGroups={groups.length}
-          upcomingDaysWithMeetings={upcomingDaysWithMeetings}
-          upcomingSlots={upcomingSlots.length}
         />
 
         <OngoingMeetings meetings={ongoingMeetings} />

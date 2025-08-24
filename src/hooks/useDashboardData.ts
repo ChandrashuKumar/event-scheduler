@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import useSWR, { mutate } from 'swr';
-import { format } from 'date-fns';
+import { format, startOfWeek, endOfWeek, addWeeks } from 'date-fns';
 import { toast } from 'react-toastify';
 import { useAuth } from '@/context/AuthContext';
 import { Group } from '@/generated/prisma/client';
@@ -13,6 +13,8 @@ type Slot = {
 };
 
 type MeetingsMap = Record<string, Slot[]>;
+
+export type WeekOption = 'this-week' | 'next-week';
 
 export const useDashboardData = () => {
   const { user } = useAuth();
@@ -55,59 +57,105 @@ export const useDashboardData = () => {
     }
   );
 
-  const meetingData = useMemo(() => {
-    const now = new Date();
-    const today = new Date();
-    const dayOfWeek = today.getDay();
+  const getWeekData = useMemo(() => {
+    return (weekOption: WeekOption) => {
+      const now = new Date();
+      const today = new Date();
+      
+      let weekStart: Date;
+      let weekEnd: Date;
+      
+      if (weekOption === 'this-week') {
+        weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Monday
+        weekEnd = endOfWeek(today, { weekStartsOn: 1 }); // Sunday
+      } else {
+        const nextWeek = addWeeks(today, 1);
+        weekStart = startOfWeek(nextWeek, { weekStartsOn: 1 });
+        weekEnd = endOfWeek(nextWeek, { weekStartsOn: 1 });
+      }
 
-    const remainingDays = Array.from({ length: 7 - dayOfWeek }, (_, i) => {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      return date;
-    });
+      // For "this week", only include remaining days
+      const startDate = weekOption === 'this-week' && today > weekStart ? today : weekStart;
+      
+      const daysInRange: Date[] = [];
+      const current = new Date(startDate);
+      while (current <= weekEnd) {
+        daysInRange.push(new Date(current));
+        current.setDate(current.getDate() + 1);
+      }
 
-    // Build merged map from all groups
-    const slotMap: Record<string, { start: string; end: string; group: string }[]> = {};
+      // Build merged map from all groups
+      const slotMap: Record<string, { start: string; end: string; group: string }[]> = {};
 
-    Object.entries(meetings).forEach(([groupId, dateMap]) => {
-      const groupName = groups.find((g) => g.id === groupId)?.name || 'Unknown Group';
-      Object.values(dateMap)
-        .flat()
-        .forEach((slot) => {
-          if (new Date(slot.start) <= now) return;
-          const dateKey = format(new Date(slot.start), 'yyyy-MM-dd');
-          if (!slotMap[dateKey]) slotMap[dateKey] = [];
-          slotMap[dateKey].push({ ...slot, group: groupName });
-        });
-    });
+      Object.entries(meetings).forEach(([groupId, dateMap]) => {
+        const groupName = groups.find((g) => g.id === groupId)?.name || 'Unknown Group';
+        Object.values(dateMap)
+          .flat()
+          .forEach((slot) => {
+            const slotDate = new Date(slot.start);
+            // Filter by week range and future slots only
+            if (slotDate <= now || slotDate < weekStart || slotDate > weekEnd) return;
+            const dateKey = format(slotDate, 'yyyy-MM-dd');
+            if (!slotMap[dateKey]) slotMap[dateKey] = [];
+            slotMap[dateKey].push({ ...slot, group: groupName });
+          });
+      });
 
-    return remainingDays.map((date) => {
-      const key = format(date, 'yyyy-MM-dd');
-      const slots = slotMap[key] || [];
-      return {
-        date: format(date, 'EEE dd MMM'),
-        count: slots.length,
-        slots,
-      };
-    });
+      return daysInRange.map((date) => {
+        const key = format(date, 'yyyy-MM-dd');
+        const slots = slotMap[key] || [];
+        return {
+          date: format(date, 'EEE dd MMM'),
+          count: slots.length,
+          slots,
+        };
+      });
+    };
   }, [meetings, groups]);
 
-  const upcomingSlots = useMemo(() => {
-    const now = new Date();
+  const meetingData = useMemo(() => getWeekData('this-week'), [getWeekData]);
 
-    return Object.values(meetings).flatMap((groupSlots) =>
-      Object.values(groupSlots)
-        .flat()
-        .filter((slot) => new Date(slot.start) > now)
-    );
+  const getWeekSlots = useMemo(() => {
+    return (weekOption: WeekOption) => {
+      const now = new Date();
+      const today = new Date();
+      
+      let weekStart: Date;
+      let weekEnd: Date;
+      
+      if (weekOption === 'this-week') {
+        weekStart = startOfWeek(today, { weekStartsOn: 1 });
+        weekEnd = endOfWeek(today, { weekStartsOn: 1 });
+      } else {
+        const nextWeek = addWeeks(today, 1);
+        weekStart = startOfWeek(nextWeek, { weekStartsOn: 1 });
+        weekEnd = endOfWeek(nextWeek, { weekStartsOn: 1 });
+      }
+
+      return Object.values(meetings).flatMap((groupSlots) =>
+        Object.values(groupSlots)
+          .flat()
+          .filter((slot) => {
+            const slotDate = new Date(slot.start);
+            return slotDate > now && slotDate >= weekStart && slotDate <= weekEnd;
+          })
+      );
+    };
   }, [meetings]);
 
-  const upcomingDaysWithMeetings = useMemo(() => {
-    const uniqueDates = new Set(
-      upcomingSlots.map((slot) => format(new Date(slot.start), 'yyyy-MM-dd'))
-    );
-    return uniqueDates.size;
-  }, [upcomingSlots]);
+  const getWeekDaysWithMeetings = useMemo(() => {
+    return (weekOption: WeekOption) => {
+      const slots = getWeekSlots(weekOption);
+      const uniqueDates = new Set(
+        slots.map((slot) => format(new Date(slot.start), 'yyyy-MM-dd'))
+      );
+      return uniqueDates.size;
+    };
+  }, [getWeekSlots]);
+
+  const upcomingSlots = useMemo(() => getWeekSlots('this-week'), [getWeekSlots]);
+
+  const upcomingDaysWithMeetings = useMemo(() => getWeekDaysWithMeetings('this-week'), [getWeekDaysWithMeetings]);
 
   const ongoingMeetings = useMemo(() => {
     const now = new Date();
@@ -173,5 +221,8 @@ export const useDashboardData = () => {
     ongoingMeetings,
     leavingGroups,
     handleLeaveGroup,
+    getWeekData,
+    getWeekSlots,
+    getWeekDaysWithMeetings,
   };
 };
