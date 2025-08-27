@@ -28,7 +28,9 @@ export default function DashboardPage() {
     ongoingMeetings,
     leavingGroups,
     handleLeaveGroup,
-    meetingLoading
+    meetingLoading,
+    getWeekDaysWithMeetings,
+    getWeekSlots
   } = useDashboardData();
 
   useEffect(() => {
@@ -48,6 +50,8 @@ export default function DashboardPage() {
       <main className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
         <StatsOverview
           totalGroups={groups.length}
+          getWeekDaysWithMeetings={getWeekDaysWithMeetings}
+          getWeekSlots={getWeekSlots}
         />
 
         <OngoingMeetings meetings={ongoingMeetings} isLoading={meetingLoading} />

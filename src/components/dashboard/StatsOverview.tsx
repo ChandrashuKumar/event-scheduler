@@ -3,18 +3,25 @@
 import { useState } from 'react';
 import { StatsCard } from './StatsCard';
 import WeekSelector, { WeekOption } from './WeekSelector';
-import { useDashboardData } from '@/hooks/useDashboardData';
+
+type Slot = {
+  start: string;
+  end: string;
+};
 
 interface StatsOverviewProps {
   totalGroups: number;
+  getWeekDaysWithMeetings: (weekOption: WeekOption) => number;
+  getWeekSlots: (weekOption: WeekOption) => Slot[];
 }
 
 const StatsOverview = ({ 
-  totalGroups 
+  totalGroups,
+  getWeekDaysWithMeetings,
+  getWeekSlots
 }: StatsOverviewProps) => {
   const [daysWeekOption, setDaysWeekOption] = useState<WeekOption>('this-week');
   const [slotsWeekOption, setSlotsWeekOption] = useState<WeekOption>('this-week');
-  const { getWeekDaysWithMeetings, getWeekSlots } = useDashboardData();
   
   const upcomingDaysWithMeetings = getWeekDaysWithMeetings(daysWeekOption);
   const upcomingSlots = getWeekSlots(slotsWeekOption).length;
