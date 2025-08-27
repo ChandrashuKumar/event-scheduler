@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dialog';
 import { LayoutDashboard, Plus, LogOut, User, X, Users, Sun, Moon, Calendar } from 'lucide-react';
 import { toast } from 'react-toastify';
-import { mutate } from 'swr';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTheme } from '@/context/ThemeContext';
 
 interface SidebarProps {
@@ -25,6 +25,7 @@ const navItems = [{ name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard'
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const queryClient = useQueryClient();
   const pathname = usePathname();
 
   const [groupName, setGroupName] = useState('');
@@ -53,7 +54,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         toast.success(`Created group: ${result.name}`);
         setGroupName('');
         setIsCreateOpen(false);
-        mutate(['/api/group/list', user]);
+        queryClient.invalidateQueries({ queryKey: ['groups'] });
       } else {
         if (result.error === 'You already have a group with this name') {
           setGroupError('You already created a group with this name.');
@@ -87,7 +88,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         toast.success(`Joined ${result.groupName} successfully!`);
         setGroupCode('');
         setIsJoinOpen(false);
-        mutate(['/api/group/list', user]);
+        queryClient.invalidateQueries({ queryKey: ['groups'] });
       } else {
         if (result.error === 'You are already a member of this group') {
           setGroupError('You are already a member of this group.');

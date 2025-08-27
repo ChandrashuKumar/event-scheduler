@@ -2,7 +2,7 @@
 
 import { useParams, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
-import useSWR from 'swr';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -16,6 +16,7 @@ import { ButtonLoader} from '@/components/ui/loader';
 export default function GroupPage() {
   const { groupId } = useParams();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const groupName = searchParams?.get('name');
 
@@ -30,71 +31,132 @@ export default function GroupPage() {
   const fetcherWithToken = async (url: string) => {
     const token = await user?.getIdToken();
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-    if (!res.ok) throw new Error('Failed to fetch');
+    
+    if (!res.ok) {
+      const result = await res.json().catch(() => ({}));
+      throw new Error(result.error || `HTTP ${res.status}: ${res.statusText}`);
+    }
+    
     return res.json();
   };
 
   const {
     data: entries,
     isLoading: loadingEntries,
-    mutate: mutateEntries,
-  } = useSWR(user ? `/api/availability/list?groupId=${groupId}` : null, fetcherWithToken);
+    error: entriesError,
+  } = useQuery({
+    queryKey: ['availability', groupId],
+    queryFn: () => fetcherWithToken(`/api/availability/list?groupId=${groupId}`),
+    enabled: !!user && !!groupId,
+  });
 
-  const { data: members, isLoading: loadingMembers } = useSWR(
-    user ? `/api/group/members?groupId=${groupId}` : null,
-    fetcherWithToken
-  );
+  // Handle entries error
+  if (entriesError) {
+    toast.error(`Failed to load availability: ${entriesError.message}`);
+  }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setStatus('Submitting...');
-    try {
-      const token = await user?.getIdToken();
+  const { data: members, isLoading: loadingMembers, error: membersError } = useQuery({
+    queryKey: ['group-members', groupId],
+    queryFn: () => fetcherWithToken(`/api/group/members?groupId=${groupId}`),
+    enabled: !!user && !!groupId,
+  });
+
+  // Handle members error
+  if (membersError) {
+    toast.error(`Failed to load group members: ${membersError.message}`);
+  }
+
+  const submitAvailabilityMutation = useMutation({
+    mutationFn: async ({ groupId, startDateTime, endDateTime, token }: {
+      groupId: string;
+      startDateTime: string;
+      endDateTime: string;
+      token: string;
+    }) => {
       const res = await fetch('/api/availability/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ groupId, startDateTime, endDateTime }),
       });
-
       const result = await res.json();
-      if (res.ok) {
-        setStatus('✅ Availability submitted!');
-        setStartDateTime('');
-        setEndDateTime('');
-        mutateEntries(); // re-fetch availability list
-        setTimeout(() => setStatus(''), 3000); // Clear success message after 3 seconds
-      } else {
-        setStatus(`❌ Error: ${result.error}`);
+      if (!res.ok) {
+        throw new Error(result.error);
       }
+      return result;
+    },
+    onSuccess: () => {
+      setStatus('✅ Availability submitted!');
+      setStartDateTime('');
+      setEndDateTime('');
+      queryClient.invalidateQueries({ queryKey: ['availability', groupId] });
+      queryClient.invalidateQueries({ queryKey: ['meetings'] });
+      setTimeout(() => setStatus(''), 3000);
+    },
+    onError: (error: Error) => {
+      setStatus(`❌ Error: ${error.message}`);
+    },
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !groupId) return;
+    
+    setStatus('Submitting...');
+    try {
+      const token = await user.getIdToken();
+      await submitAvailabilityMutation.mutateAsync({
+        groupId: groupId as string,
+        startDateTime,
+        endDateTime,
+        token,
+      });
     } catch {
       setStatus('❌ Error submitting availability');
     }
   };
 
-  const handleDelete = async (availabilityId: string) => {
-    setDeletingAvailability(prev => new Set(prev).add(availabilityId));
-    try {
-      const token = await user?.getIdToken();
+  const deleteAvailabilityMutation = useMutation({
+    mutationFn: async ({ availabilityId, token }: { availabilityId: string; token: string }) => {
       const res = await fetch('/api/availability/remove', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ availabilityId }),
       });
-
-      if (res.ok) {
-        toast.success('Availability deleted!');
-        mutateEntries();
-      } else {
-        toast.error('Error deleting availability');
+      const result = await res.json();
+      if (!res.ok) {
+        throw new Error(result.error || 'Error deleting availability');
       }
-    } catch {
-      toast.error('Server error');
-    } finally {
+      return result;
+    },
+    onSuccess: (_, { availabilityId }) => {
+      toast.success('Availability deleted!');
+      queryClient.invalidateQueries({ queryKey: ['availability', groupId] });
+      queryClient.invalidateQueries({ queryKey: ['meetings'] });
       setDeletingAvailability(prev => {
         const newSet = new Set(prev);
         newSet.delete(availabilityId);
         return newSet;
       });
+    },
+    onError: (_, { availabilityId }) => {
+      toast.error('Error deleting availability');
+      setDeletingAvailability(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(availabilityId);
+        return newSet;
+      });
+    },
+  });
+
+  const handleDelete = async (availabilityId: string) => {
+    if (!user) return;
+    
+    setDeletingAvailability(prev => new Set(prev).add(availabilityId));
+    try {
+      const token = await user.getIdToken();
+      await deleteAvailabilityMutation.mutateAsync({ availabilityId, token });
+    } catch {
+      toast.error('Server error');
     }
   };
 
