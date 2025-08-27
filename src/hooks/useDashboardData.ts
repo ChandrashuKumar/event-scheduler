@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import useSWR, { mutate } from 'swr';
 import { format, startOfWeek, endOfWeek, addWeeks } from 'date-fns';
 import { toast } from 'react-toastify';
@@ -57,8 +57,7 @@ export const useDashboardData = () => {
     }
   );
 
-  const getWeekData = useMemo(() => {
-    return (weekOption: WeekOption) => {
+  const getWeekData = (weekOption: WeekOption) => {
       const now = new Date();
       const today = new Date();
       
@@ -110,13 +109,11 @@ export const useDashboardData = () => {
           slots,
         };
       });
-    };
-  }, [meetings, groups]);
+  };
 
-  const meetingData = useMemo(() => getWeekData('this-week'), [getWeekData]);
+  const meetingData = getWeekData('this-week');
 
-  const getWeekSlots = useMemo(() => {
-    return (weekOption: WeekOption) => {
+  const getWeekSlots = (weekOption: WeekOption) => {
       const now = new Date();
       const today = new Date();
       
@@ -140,24 +137,21 @@ export const useDashboardData = () => {
             return slotDate > now && slotDate >= weekStart && slotDate <= weekEnd;
           })
       );
-    };
-  }, [meetings]);
+  };
 
-  const getWeekDaysWithMeetings = useMemo(() => {
-    return (weekOption: WeekOption) => {
+  const getWeekDaysWithMeetings = (weekOption: WeekOption) => {
       const slots = getWeekSlots(weekOption);
       const uniqueDates = new Set(
         slots.map((slot) => format(new Date(slot.start), 'yyyy-MM-dd'))
       );
       return uniqueDates.size;
-    };
-  }, [getWeekSlots]);
+  };
 
-  const upcomingSlots = useMemo(() => getWeekSlots('this-week'), [getWeekSlots]);
+  const upcomingSlots = getWeekSlots('this-week');
 
-  const upcomingDaysWithMeetings = useMemo(() => getWeekDaysWithMeetings('this-week'), [getWeekDaysWithMeetings]);
+  const upcomingDaysWithMeetings = getWeekDaysWithMeetings('this-week');
 
-  const ongoingMeetings = useMemo(() => {
+  const getOngoingMeetings = () => {
     const now = new Date();
     
     const ongoing: Array<{ start: string; end: string; group: string }> = [];
@@ -178,7 +172,9 @@ export const useDashboardData = () => {
     });
     
     return ongoing;
-  }, [meetings, groups]);
+  };
+
+  const ongoingMeetings = getOngoingMeetings();
 
   const handleLeaveGroup = async (groupId: string, groupName: string) => {
     setLeavingGroups(prev => new Set(prev).add(groupId));
