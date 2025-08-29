@@ -11,9 +11,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { LayoutDashboard, Plus, LogOut, User, X, Users, Sun, Moon, Calendar } from 'lucide-react';
-import { toast } from 'react-toastify';
-import { useQueryClient } from '@tanstack/react-query';
 import { useTheme } from '@/context/ThemeContext';
+import { useGroupManagement } from '@/hooks/useGroupManagement';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -25,81 +24,33 @@ const navItems = [{ name: 'Dashboard', icon: LayoutDashboard, path: '/dashboard'
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const queryClient = useQueryClient();
   const pathname = usePathname();
 
-  const [groupName, setGroupName] = useState('');
-  const [groupCode, setGroupCode] = useState('');
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isJoinOpen, setIsJoinOpen] = useState(false);
-  const [groupError, setGroupError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const {
+    groupName,
+    setGroupName,
+    groupCode,
+    setGroupCode,
+    groupError,
+    isSubmitting,
+    handleCreateGroup,
+    handleJoinGroup,
+  } = useGroupManagement();
 
-  const handleCreateGroup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setGroupError('');
-    try {
-      const token = await user?.getIdToken();
-      const res = await fetch('/api/group/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ name: groupName }),
-      });
-      const result = await res.json();
-      if (res.ok) {
-        toast.success(`Created group: ${result.name}`);
-        setGroupName('');
-        setIsCreateOpen(false);
-        queryClient.invalidateQueries({ queryKey: ['groups'] });
-      } else {
-        if (result.error === 'You already have a group with this name') {
-          setGroupError('You already created a group with this name.');
-        } else {
-          toast.error(result.error || 'Failed to create group.');
-        }
-      }
-    } catch {
-      toast.error('Something went wrong.');
-    } finally {
-      setIsSubmitting(false);
+  const handleCreateGroupSubmit = async (e: React.FormEvent) => {
+    const result = await handleCreateGroup(e);
+    if (result.success) {
+      setIsCreateOpen(false);
     }
   };
 
-  const handleJoinGroup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setGroupError('');
-    try {
-      const token = await user?.getIdToken();
-      const res = await fetch('/api/group/join', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ groupId: groupCode }),
-      });
-      const result = await res.json();
-      if (res.ok) {
-        toast.success(`Joined ${result.groupName} successfully!`);
-        setGroupCode('');
-        setIsJoinOpen(false);
-        queryClient.invalidateQueries({ queryKey: ['groups'] });
-      } else {
-        if (result.error === 'You are already a member of this group') {
-          setGroupError('You are already a member of this group.');
-        } else {
-          toast.error(result.error || 'Failed to join group.');
-        }
-      }
-    } catch {
-      toast.error('Something went wrong.');
-    } finally {
-      setIsSubmitting(false);
+  const handleJoinGroupSubmit = async (e: React.FormEvent) => {
+    const result = await handleJoinGroup(e);
+    if (result.success) {
+      setIsJoinOpen(false);
     }
   };
 
@@ -221,7 +172,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 <DialogTitle className="text-center">Create Group</DialogTitle>
               </DialogHeader>
 
-              <form onSubmit={handleCreateGroup} className="flex flex-col items-center gap-6 mt-4">
+              <form onSubmit={handleCreateGroupSubmit} className="flex flex-col items-center gap-6 mt-4">
                 <input
                   type="text"
                   placeholder="Group Name"
@@ -266,7 +217,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
               <DialogHeader>
                 <DialogTitle>Join Group</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleJoinGroup} className="flex flex-col items-center gap-6 mt-4">
+              <form onSubmit={handleJoinGroupSubmit} className="flex flex-col items-center gap-6 mt-4">
                 <input
                   type="text"
                   placeholder="Group Code"

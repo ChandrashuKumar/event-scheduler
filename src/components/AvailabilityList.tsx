@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Availability } from '@/generated/prisma';
 import Skeleton from 'react-loading-skeleton';
 import { format } from 'date-fns';
@@ -6,11 +7,26 @@ import { ButtonLoader } from '@/components/ui/loader';
 interface Props {
   entries: Availability[];
   loading: boolean;
-  handleDelete: (id: string) => void;
-  deletingAvailability?: Set<string>;
+  onDelete: (id: string) => Promise<void>;
 }
 
-export default function AvailabilityList({ entries, loading, handleDelete, deletingAvailability = new Set() }: Props) {
+export default function AvailabilityList({ entries, loading, onDelete }: Props) {
+  const [deletingAvailability, setDeletingAvailability] = useState<Set<string>>(new Set());
+
+  const handleDelete = async (availabilityId: string) => {
+    setDeletingAvailability(prev => new Set(prev).add(availabilityId));
+    try {
+      await onDelete(availabilityId);
+    } catch {
+      // Error handling is done in parent
+    } finally {
+      setDeletingAvailability(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(availabilityId);
+        return newSet;
+      });
+    }
+  };
   const groupedByDate = entries.reduce(
     (acc, entry) => {
       const date = format(new Date(entry.startDateTime), 'yyyy-MM-dd');

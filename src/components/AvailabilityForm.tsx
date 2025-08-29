@@ -5,24 +5,20 @@ import TimePicker from 'react-multi-date-picker/plugins/analog_time_picker';
 import { ButtonLoader } from '@/components/ui/loader';
 
 interface Props {
-  startDateTime: string;
-  endDateTime: string;
-  setStartDateTime: (val: string) => void;
-  setEndDateTime: (val: string) => void;
-  handleSubmit: (e: React.FormEvent) => void;
+  onSubmit: (data: { startDateTime: string; endDateTime: string }) => Promise<void>;
+  isSubmitting: boolean;
   status: string;
   existingEntries?: Array<{ startDateTime: string; endDateTime: string }>;
 }
 
 export default function AvailabilityForm({
-  startDateTime,
-  endDateTime,
-  setStartDateTime,
-  setEndDateTime,
-  handleSubmit,
+  onSubmit,
+  isSubmitting,
   status,
   existingEntries = [],
 }: Props) {
+  const [startDateTime, setStartDateTime] = useState('');
+  const [endDateTime, setEndDateTime] = useState('');
   const [localError, setLocalError] = useState('');
   const [overlapInfo, setOverlapInfo] = useState('');
 
@@ -88,10 +84,16 @@ export default function AvailabilityForm({
     }
   }, [startDateTime, endDateTime, existingEntries]);
 
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (localError) return;
-    handleSubmit(e);
+    
+    await onSubmit({ startDateTime, endDateTime });
+    // Clear form on successful submit (status will be managed by parent)
+    if (!status.includes('Error')) {
+      setStartDateTime('');
+      setEndDateTime('');
+    }
   };
 
   return (
@@ -132,10 +134,10 @@ export default function AvailabilityForm({
       <div className="flex justify-center">
         <button
           type="submit"
-          disabled={status === 'Submitting...' || !!localError}
+          disabled={isSubmitting || !!localError}
           className="bg-pink-500 hover:bg-pink-600 transition-colors text-white px-6 py-2 rounded-lg font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
-          {status === 'Submitting...' && <ButtonLoader />}
+          {isSubmitting && <ButtonLoader />}
           ✅ Submit Availability
         </button>
       </div>

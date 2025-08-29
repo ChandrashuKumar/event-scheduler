@@ -2,7 +2,6 @@
 
 import { BarChart, XAxis, YAxis, Tooltip, Bar, Cell, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { useTheme } from '@/context/ThemeContext';
-import { useChartColors } from '@/hooks/useChartColors';
 import { ChartGradients } from './ChartGradients';
 import { CustomTooltip } from './CustomTooltip';
 import { GRADIENT_COLORS } from './chartConstants';
@@ -14,7 +13,7 @@ interface WeeklyBarChartProps {
 
 export const WeeklyBarChart = ({ data }: WeeklyBarChartProps) => {
   const { theme } = useTheme();
-  const chartColors = useChartColors();
+  const textColor = theme === 'dark' ? '#a1a1aa' : '#52525b';
 
   return (
     <div className="h-64 sm:h-80">
@@ -36,25 +35,25 @@ export const WeeklyBarChart = ({ data }: WeeklyBarChartProps) => {
           <XAxis 
             dataKey="date" 
             tick={{ 
-              fill: chartColors.text, 
+              fill: textColor, 
               fontSize: 16, 
               fontWeight: 600,
               fontFamily: 'system-ui, -apple-system, sans-serif'
             }}
-            tickLine={{ stroke: chartColors.text, strokeWidth: 2 }}
-            axisLine={{ stroke: chartColors.text, strokeWidth: 2 }}
+            tickLine={{ stroke: textColor, strokeWidth: 2 }}
+            axisLine={{ stroke: textColor, strokeWidth: 2 }}
             dy={10}
           />
           <YAxis 
             allowDecimals={false} 
             tick={{ 
-              fill: chartColors.text, 
+              fill: textColor, 
               fontSize: 16, 
               fontWeight: 600,
               fontFamily: 'system-ui, -apple-system, sans-serif'
             }}
-            tickLine={{ stroke: chartColors.text, strokeWidth: 2 }}
-            axisLine={{ stroke: chartColors.text, strokeWidth: 2 }}
+            tickLine={{ stroke: textColor, strokeWidth: 2 }}
+            axisLine={{ stroke: textColor, strokeWidth: 2 }}
             dx={-10}
           />
           <Tooltip 

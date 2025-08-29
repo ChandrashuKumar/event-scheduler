@@ -76,21 +76,74 @@ export const useDashboardData = () => {
 
   const meetingsData = meetings || {};
 
-  const getWeekData = (weekOption: WeekOption) => {
-    const now = new Date();
+  const getWeekBoundaries = (weekOption: WeekOption) => {
     const today = new Date();
-
-    let weekStart: Date;
-    let weekEnd: Date;
-
+    
     if (weekOption === 'this-week') {
-      weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Monday
-      weekEnd = endOfWeek(today, { weekStartsOn: 1 }); // Sunday
+      return {
+        weekStart: startOfWeek(today, { weekStartsOn: 1 }),
+        weekEnd: endOfWeek(today, { weekStartsOn: 1 }),
+        today
+      };
     } else {
       const nextWeek = addWeeks(today, 1);
-      weekStart = startOfWeek(nextWeek, { weekStartsOn: 1 });
-      weekEnd = endOfWeek(nextWeek, { weekStartsOn: 1 });
+      return {
+        weekStart: startOfWeek(nextWeek, { weekStartsOn: 1 }),
+        weekEnd: endOfWeek(nextWeek, { weekStartsOn: 1 }),
+        today
+      };
     }
+  };
+
+  /*
+ * Generates a week view of available meeting slots
+ * 
+ * Flow:
+ * 1. Calculate week boundaries (Mon-Sun) for 'this-week' or 'next-week'
+ * 2. For 'this-week': start from today (skip past days), for 'next-week': start from next Monday
+ * 3. Process all meeting slots from all groups in meetingsData
+ * 4. Filter slots to only include: future slots + within the target week
+ * 5. Group filtered slots by date (yyyy-mm-dd)
+ * 6. Return array of daily objects: { date: "Mon 15 Jan", count: 3, slots: [...] }
+ */
+
+  const processAllSlots = () => {
+    const now = new Date();
+    const allSlots: Array<{ 
+      start: string; 
+      end: string; 
+      group: string; 
+      startDate: Date; 
+      endDate: Date;
+      dateKey: string;
+    }> = [];
+
+    Object.entries(meetingsData).forEach(([groupId, dateMap]) => {
+      const groupName = groups.find((g) => g.id === groupId)?.name || 'Unknown Group';
+      Object.values(dateMap)
+        .flat()
+        .forEach((slot) => {
+          const startDate = new Date(slot.start);
+          const endDate = new Date(slot.end);
+          const dateKey = format(startDate, 'yyyy-MM-dd');
+          
+          allSlots.push({ 
+            ...slot, 
+            group: groupName,
+            startDate,
+            endDate,
+            dateKey
+          });
+        });
+    });
+
+    return { allSlots, now };
+  };
+
+  const { allSlots, now } = processAllSlots();
+
+  const getWeekData = (weekOption: WeekOption) => {
+    const { weekStart, weekEnd, today } = getWeekBoundaries(weekOption);
 
     // For "this week", only include remaining days
     const startDate = weekOption === 'this-week' && today > weekStart ? today : weekStart;
@@ -102,21 +155,14 @@ export const useDashboardData = () => {
       current.setDate(current.getDate() + 1);
     }
 
-    // Build merged map from all groups
+    // Filter and build slot map
     const slotMap: Record<string, { start: string; end: string; group: string }[]> = {};
-
-    Object.entries(meetingsData).forEach(([groupId, dateMap]) => {
-      const groupName = groups.find((g) => g.id === groupId)?.name || 'Unknown Group';
-      Object.values(dateMap)
-        .flat()
-        .forEach((slot) => {
-          const slotDate = new Date(slot.start);
-          // Filter by week range and future slots only
-          if (slotDate <= now || slotDate < weekStart || slotDate > weekEnd) return;
-          const dateKey = format(slotDate, 'yyyy-MM-dd');
-          if (!slotMap[dateKey]) slotMap[dateKey] = [];
-          slotMap[dateKey].push({ ...slot, group: groupName });
-        });
+    
+    allSlots.forEach((slot) => {
+      // Filter by week range and future slots only
+      if (slot.startDate <= now || slot.startDate < weekStart || slot.startDate > weekEnd) return;
+      if (!slotMap[slot.dateKey]) slotMap[slot.dateKey] = [];
+      slotMap[slot.dateKey].push({ start: slot.start, end: slot.end, group: slot.group });
     });
 
     return daysInRange.map((date) => {
@@ -130,67 +176,35 @@ export const useDashboardData = () => {
     });
   };
 
-  const meetingData = getWeekData('this-week');
-
   const getWeekSlots = (weekOption: WeekOption) => {
-    const now = new Date();
-    const today = new Date();
+    const { weekStart, weekEnd} = getWeekBoundaries(weekOption);
 
-    let weekStart: Date;
-    let weekEnd: Date;
-
-    if (weekOption === 'this-week') {
-      weekStart = startOfWeek(today, { weekStartsOn: 1 });
-      weekEnd = endOfWeek(today, { weekStartsOn: 1 });
-    } else {
-      const nextWeek = addWeeks(today, 1);
-      weekStart = startOfWeek(nextWeek, { weekStartsOn: 1 });
-      weekEnd = endOfWeek(nextWeek, { weekStartsOn: 1 });
-    }
-
-    return Object.values(meetingsData).flatMap((groupSlots) =>
-      Object.values(groupSlots)
-        .flat()
-        .filter((slot) => {
-          const slotDate = new Date(slot.start);
-          return slotDate > now && slotDate >= weekStart && slotDate <= weekEnd;
-        })
-    );
+    return allSlots
+      .filter((slot) => slot.startDate > now && slot.startDate >= weekStart && slot.startDate <= weekEnd)
+      .map((slot) => ({ start: slot.start, end: slot.end }));
   };
 
   const getWeekDaysWithMeetings = (weekOption: WeekOption) => {
-    const slots = getWeekSlots(weekOption);
-    const uniqueDates = new Set(slots.map((slot) => format(new Date(slot.start), 'yyyy-MM-dd')));
+    const { weekStart, weekEnd} = getWeekBoundaries(weekOption);
+
+    const uniqueDates = new Set(
+      allSlots
+        .filter((slot) => slot.startDate > now && slot.startDate >= weekStart && slot.startDate <= weekEnd)
+        .map((slot) => slot.dateKey)
+    );
+    
     return uniqueDates.size;
   };
 
-  const upcomingSlots = getWeekSlots('this-week');
-
-  const upcomingDaysWithMeetings = getWeekDaysWithMeetings('this-week');
-
   const getOngoingMeetings = () => {
-    const now = new Date();
-
-    const ongoing: Array<{ start: string; end: string; group: string }> = [];
-
-    Object.entries(meetingsData).forEach(([groupId, dateMap]) => {
-      const groupName = groups.find((g) => g.id === groupId)?.name || 'Unknown Group';
-      Object.values(dateMap)
-        .flat()
-        .forEach((slot) => {
-          const slotStart = new Date(slot.start);
-          const slotEnd = new Date(slot.end);
-
-          // Check if meeting is currently ongoing
-          if (slotStart <= now && now <= slotEnd) {
-            ongoing.push({ ...slot, group: groupName });
-          }
-        });
-    });
-
-    return ongoing;
+    return allSlots
+      .filter((slot) => slot.startDate <= now && now <= slot.endDate)
+      .map((slot) => ({ start: slot.start, end: slot.end, group: slot.group }));
   };
 
+  const meetingData = getWeekData('this-week');
+  const upcomingSlots = getWeekSlots('this-week');
+  const upcomingDaysWithMeetings = getWeekDaysWithMeetings('this-week');
   const ongoingMeetings = getOngoingMeetings();
 
   const leaveGroupMutation = useMutation({

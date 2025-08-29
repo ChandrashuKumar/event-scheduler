@@ -11,7 +11,6 @@ import AvailabilityForm from '@/components/AvailabilityForm';
 import GroupMembers from '@/components/GroupMembers';
 import AvailabilityList from '@/components/AvailabilityList';
 import ResolvedSlots from '@/components/ResolvedSlots';
-import { ButtonLoader} from '@/components/ui/loader';
 
 export default function GroupPage() {
   const { groupId } = useParams();
@@ -20,13 +19,7 @@ export default function GroupPage() {
   const searchParams = useSearchParams();
   const groupName = searchParams?.get('name');
 
-  const [startDateTime, setStartDateTime] = useState('');
-  const [endDateTime, setEndDateTime] = useState('');
   const [status, setStatus] = useState('');
-  const [resolved, setResolved] = useState<Record<string, { start: string; end: string }[]>>({});
-  const [loadingResolved, setLoadingResolved] = useState(false);
-  const [showResults, setShowResults] = useState(false);
-  const [deletingAvailability, setDeletingAvailability] = useState<Set<string>>(new Set());
 
   const fetcherWithToken = async (url: string) => {
     const token = await user?.getIdToken();
@@ -67,12 +60,12 @@ export default function GroupPage() {
   }
 
   const submitAvailabilityMutation = useMutation({
-    mutationFn: async ({ groupId, startDateTime, endDateTime, token }: {
+    mutationFn: async ({ groupId, startDateTime, endDateTime }: {
       groupId: string;
       startDateTime: string;
       endDateTime: string;
-      token: string;
     }) => {
+      const token = await user?.getIdToken();
       const res = await fetch('/api/availability/submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -86,8 +79,6 @@ export default function GroupPage() {
     },
     onSuccess: () => {
       setStatus('✅ Availability submitted!');
-      setStartDateTime('');
-      setEndDateTime('');
       queryClient.invalidateQueries({ queryKey: ['availability', groupId] });
       queryClient.invalidateQueries({ queryKey: ['meetings'] });
       setTimeout(() => setStatus(''), 3000);
@@ -97,18 +88,14 @@ export default function GroupPage() {
     },
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmitAvailability = async (data: { startDateTime: string; endDateTime: string }) => {
     if (!user || !groupId) return;
     
     setStatus('Submitting...');
     try {
-      const token = await user.getIdToken();
       await submitAvailabilityMutation.mutateAsync({
         groupId: groupId as string,
-        startDateTime,
-        endDateTime,
-        token,
+        ...data,
       });
     } catch {
       setStatus('❌ Error submitting availability');
@@ -116,7 +103,8 @@ export default function GroupPage() {
   };
 
   const deleteAvailabilityMutation = useMutation({
-    mutationFn: async ({ availabilityId, token }: { availabilityId: string; token: string }) => {
+    mutationFn: async (availabilityId: string) => {
+      const token = await user?.getIdToken();
       const res = await fetch('/api/availability/remove', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -128,53 +116,33 @@ export default function GroupPage() {
       }
       return result;
     },
-    onSuccess: (_, { availabilityId }) => {
+    onSuccess: () => {
       toast.success('Availability deleted!');
       queryClient.invalidateQueries({ queryKey: ['availability', groupId] });
       queryClient.invalidateQueries({ queryKey: ['meetings'] });
-      setDeletingAvailability(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(availabilityId);
-        return newSet;
-      });
     },
-    onError: (_, { availabilityId }) => {
+    onError: () => {
       toast.error('Error deleting availability');
-      setDeletingAvailability(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(availabilityId);
-        return newSet;
-      });
     },
   });
 
-  const handleDelete = async (availabilityId: string) => {
+  const handleDeleteAvailability = async (availabilityId: string) => {
     if (!user) return;
     
-    setDeletingAvailability(prev => new Set(prev).add(availabilityId));
     try {
-      const token = await user.getIdToken();
-      await deleteAvailabilityMutation.mutateAsync({ availabilityId, token });
+      await deleteAvailabilityMutation.mutateAsync(availabilityId);
     } catch {
       toast.error('Server error');
     }
   };
 
-  const fetchResolvedSlots = async () => {
-    setLoadingResolved(true);
-    setShowResults(true);
-    try {
-      const res = await fetch(`/api/availability/resolve?groupId=${groupId}`);
-      const data = await res.json();
-      if (res.ok) {
-        setResolved(data);
-      } else {
-        toast.error(data.error || 'Failed to resolve');
-      }
-    } catch {
-      toast.error('Server error');
-    } finally {
-      setLoadingResolved(false);
+  const handleResolveSlots = async () => {
+    const res = await fetch(`/api/availability/resolve?groupId=${groupId}`);
+    const data = await res.json();
+    if (res.ok) {
+      return data;
+    } else {
+      throw new Error(data.error || 'Failed to resolve');
     }
   };
 
@@ -196,11 +164,8 @@ export default function GroupPage() {
 
       <div className="flex flex-col md:flex-row gap-8">
         <AvailabilityForm
-          startDateTime={startDateTime}
-          endDateTime={endDateTime}
-          setStartDateTime={setStartDateTime}
-          setEndDateTime={setEndDateTime}
-          handleSubmit={handleSubmit}
+          onSubmit={handleSubmitAvailability}
+          isSubmitting={submitAvailabilityMutation.isPending}
           status={status}
           existingEntries={entries || []}
         />
@@ -210,25 +175,12 @@ export default function GroupPage() {
       <AvailabilityList
         entries={entries || []}
         loading={loadingEntries}
-        handleDelete={handleDelete}
-        deletingAvailability={deletingAvailability}
+        onDelete={handleDeleteAvailability}
       />
 
-      <div className="mt-6 text-center">
-        <button
-          onClick={fetchResolvedSlots}
-          disabled={loadingResolved}
-          className="bg-pink-500 hover:bg-pink-600 transition-colors cursor-pointer text-white px-5 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto"
-        >
-          {loadingResolved && <ButtonLoader />}
-          🧠 Resolve Common Time Slots
-        </button>
-      </div>
-
       <ResolvedSlots
-        showResults={showResults}
-        loadingResolved={loadingResolved}
-        resolved={resolved}
+        groupId={groupId as string}
+        onResolve={handleResolveSlots}
       />
     </div>
   );
