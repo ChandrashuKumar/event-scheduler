@@ -1,39 +1,27 @@
 event-scheduler/
-├── prisma/
-│   ├── migrations/
-│   └── schema.prisma
-
-├── public/
-│   └── ...assets (favicon, images, etc.)
-
-├── src/
-│   ├── app/                             # Next.js App Router
-│   │   ├── api/                         # Route handlers (backend logic)
-│   │   │   ├── availability/
-│   │   │   ├── group/
-│   │   │   └── user/
-│   │   ├── (dashboard)/                # Layout group with sidebar
-│   │   │   ├── layout.tsx
-│   │   │   ├── dashboard/
-│   │   │   ├── create-group/
-│   │   │   ├── join-group/
-│   │   │   └── groups/
-│   │   │       └── [groupId]/
-│   │   ├── login/
-│   │   ├── favicon.ico
-│   │   ├── globals.css
-│   │   ├── layoyt.tsx
-│   │   └── page.tsx                    # Landing Page
-│
-│   ├── components/                     # Shared UI Components (Sidebar, ...)
-│
-│   ├── context/                        # React Context Providers
-│   │   └── AuthContext.tsx
-│
-│   ├── lib/                            # Utility libs and API clients
-│
-├── tailwind.config.js
-├── postcss.config.mjs
-├── tsconfig.json
+├── .claude/
+├── .env
+├── README.md
+├── components.json
+├── next.config.ts
 ├── package.json
-└── README.md
+├── tsconfig.json
+├── prisma/
+│   └── migrations/
+└── src/
+    ├── app/
+    │   ├── (dashboard)/
+    │   │   ├── dashboard/
+    │   │   └── groups/[groupId]/availability/
+    │   ├── login/
+    │   └── api/
+    │       ├── availability/
+    │       ├── group/
+    │       └── user/
+    ├── components/
+    │   ├── dashboard/
+    │   └── ui/
+    ├── context/
+    ├── hooks/
+    ├── lib/
+    └── providers/
