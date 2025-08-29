@@ -1,5 +1,3 @@
-import Skeleton from 'react-loading-skeleton';
-import 'react-loading-skeleton/dist/skeleton.css';
 
 type GroupMemberBasic = {
   id: string;
@@ -20,13 +18,11 @@ export default function GroupMembers({
       <p className="text-sm text-muted-foreground mb-4">Invite your team members to collaborate.</p>
 
       {loading ? (
-        <Skeleton
-          count={3}
-          height={50}
-          baseColor="#e2e8f0"
-          highlightColor="#f1f5f9"
-          className="rounded-md dark:[&>span]:!bg-[#313131] dark:[&>span]:after:!bg-[#525252]"
-        />
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-12 bg-blue-200/50 dark:bg-muted/30 rounded-lg animate-pulse" />
+          ))}
+        </div>
       ) : members.length > 0 ? (
         <ul className="space-y-4">
           {members.map((m) => (

@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Availability } from '@/generated/prisma';
-import Skeleton from 'react-loading-skeleton';
 import { format } from 'date-fns';
 import { ButtonLoader } from '@/components/ui/loader';
 
@@ -45,13 +44,11 @@ export default function AvailabilityList({ entries, loading, onDelete }: Props) 
         <h2 className="text-lg font-semibold mb-3 text-foreground">Your Submitted Availability</h2>
 
         {loading ? (
-          <Skeleton
-            count={4}
-            height={20}
-            baseColor="#e2e8f0"
-            highlightColor="#f1f5f9"
-            className="mb-1 dark:[&>span]:!bg-[#313131] dark:[&>span]:after:!bg-[#525252]"
-          />
+          <div className="space-y-3">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-5 bg-pink-200/50 dark:bg-muted/30 rounded-md animate-pulse" />
+            ))}
+          </div>
         ) : sorted.length > 0 ? (
           <div className="space-y-6">
             {sorted.map(([date, slots]) => (

@@ -250,7 +250,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       <div className="p-4 sm:p-6 border-t border-sidebar-border">
         <button
           onClick={logout}
-          className="flex items-center gap-3 px-3 py-3 rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 transition-all duration-200 w-full group"
+          className="flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 transition-all duration-200 w-full group"
         >
           <div className="w-5 h-5 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center group-hover:bg-red-200 dark:group-hover:bg-red-900/50 transition-colors">
             <LogOut className="w-3 h-3 text-red-600 dark:text-red-400" />

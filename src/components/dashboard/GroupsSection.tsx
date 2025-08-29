@@ -88,7 +88,7 @@ const GroupsSection = ({
                       `/groups/${group.id}/availability?name=${encodeURIComponent(group.name)}`
                     )
                   }
-                  className="px-3 py-2 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors"
+                  className="px-3 py-2 text-sm font-medium cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg transition-colors"
                 >
                   Open Group
                 </button>
