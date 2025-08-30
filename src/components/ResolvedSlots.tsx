@@ -21,8 +21,8 @@ export default function ResolvedSlots({ groupId, onResolve }: Props) {
     try {
       const data = await onResolve();
       setResolved(data);
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to resolve');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to resolve');
     } finally {
       setLoadingResolved(false);
     }

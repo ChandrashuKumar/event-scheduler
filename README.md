@@ -1,4 +1,4 @@
-# 🗓️ Smart Event Scheduler
+# 🗓️ conVene
 
 A full-stack web application that enables teams to effortlessly coordinate common availability and schedule meetings — powered by **Next.js**, **Firebase Auth**, **Supabase PostgreSQL**, and **Prisma**.
 Checkout Live at https://event-scheduler-lovat-seven.vercel.app/

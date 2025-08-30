@@ -166,7 +166,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 <span className="font-medium">Create Group</span>
               </button>
             </DialogTrigger>
-          <DialogContent className="w-[22rem] max-w-full">
+          <DialogContent className="w-[22rem] max-w-full dialog-content">
             <div className="mx-auto w-full max-w-sm">
               <DialogHeader>
                 <DialogTitle className="text-center">Create Group</DialogTitle>
@@ -212,7 +212,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
                 <span className="font-medium">Join Group</span>
               </button>
             </DialogTrigger>
-          <DialogContent className="w-[22rem] max-w-full">
+          <DialogContent className="w-[22rem] max-w-full dialog-content">
             <div className="mx-auto w-full max-w-sm">
               <DialogHeader>
                 <DialogTitle>Join Group</DialogTitle>

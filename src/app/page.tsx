@@ -12,7 +12,7 @@ export default function HomePage() {
         <div
           className={`${michroma.className} text-3xl sm:text-4xl font-bold bg-gradient-to-r from-zinc-800 via-zinc-600 to-zinc-300 bg-clip-text text-transparent`}
         >
-          event-scheduler
+          conVene
         </div>
         <Link
           href="/login"
@@ -146,7 +146,7 @@ export default function HomePage() {
 
       {/* Footer */}
       <footer className="py-8 text-center text-zinc-600 text-sm bg-indigo-50">
-        © 2025 Event Scheduler. All rights reserved.
+        © 2025 conVene. All rights reserved.
       </footer>
     </main>
   );

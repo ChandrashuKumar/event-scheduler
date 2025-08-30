@@ -153,3 +153,16 @@
   background-color: var(--foreground);
 }
 
+.dialog-content {
+  @apply border border-neutral-200 dark:border-neutral-700 
+         shadow-md dark:shadow-lg;
+}
+
+@layer utilities {
+  .shadow-md {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+  .dark .shadow-lg {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  }
+}
