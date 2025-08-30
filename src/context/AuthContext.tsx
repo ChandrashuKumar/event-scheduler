@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation';
 type AuthContextType = {
   user: User | null;
   loading: boolean;
+  isLoggingIn: boolean;
   login: () => Promise<void>;
   logout: () => Promise<void>;
 };
@@ -22,29 +23,39 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
       setLoading(false);
+      if (firebaseUser) {
+        setIsLoggingIn(false);
+      }
     });
     return () => unsub();
   }, []);
 
   const login = async () => {
-    const provider = new GoogleAuthProvider();
-    const result = await signInWithPopup(auth, provider);
-    const token = await result.user.getIdToken();
+    try {
+      setIsLoggingIn(true);
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      const token = await result.user.getIdToken();
 
-    await fetch('/api/user/init', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+      await fetch('/api/user/init', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-    router.push('/dashboard');
+      router.push('/dashboard');
+    } catch (error) {
+      console.error('Login failed:', error);
+      setIsLoggingIn(false);
+    }
   };
 
   const logout = async () => {
@@ -54,7 +65,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, loading, isLoggingIn, login, logout }}>{children}</AuthContext.Provider>
   );
 };
 

@@ -11,7 +11,7 @@ import { Sun, Moon } from 'lucide-react';
 const michroma = Michroma({ subsets: ['latin'], weight: '400' });
 
 export default function LoginPage() {
-  const { user, loading, login } = useAuth();
+  const { user, loading, isLoggingIn, login } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const router = useRouter();
 
@@ -21,9 +21,9 @@ export default function LoginPage() {
     }
   }, [user, loading, router]);
 
-  if (loading || user) return (
+  if (loading || user || isLoggingIn) return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-zinc-900 dark:via-zinc-800 dark:to-zinc-900 text-zinc-900 dark:text-white flex items-center justify-center">
-      <Loader size="xl" variant="dots" text="Loading..." />
+      <Loader size="xl" variant="dots" text={isLoggingIn ? "Signing you in..." : "Loading..."} />
     </div>
   );
 
